@@ -81,7 +81,7 @@ specify check
     *   開発の基本的なルールや方針（例えば、使用するプログラミング言語の規約など）をAIに定義させます。
 
 
-/speckit.constitution 私が今まで使っていたプロンプトが AGENTS.md です。こちらを参照して .specify/memory/constitution.md を更新してください。やってほしいことは  AGENTS.md の内容を理解した上で .specify/memory/constitution.md のフォーマットを崩さずに AI エージェントが仕様、計画、実装の各フェーズで参照するプロジェクトの基本ガイドラインを含む統治原則を作成することです。
+Instructions1.md の内容を確認して実行してください。
 
 
 
