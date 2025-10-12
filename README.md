@@ -73,6 +73,26 @@ specify check
 
 
 
+実務フローは Constitution → Specify → Plan → Tasks → Implement の順で、必要に応じて Clarify / Analyze / Checklist を挿入して品質を高めます。
+
+### エージェント内で順に実行
+/speckit.constitution  品質・テスト・UX一貫性・性能に関する原則を作って
+/speckit.specify       何を作るか（WHAT/WHY）を定義
+/speckit.clarify       曖昧さを解消（推奨オプション）
+/speckit.plan          技術計画（スタック/アーキテクチャ）
+/speckit.tasks         実行タスクリスト生成
+/speckit.implement     タスク実行・TDDで実装
+
+※任意ツール:
+/speckit.clarify（不足要件の質疑応答）
+/speckit.analyze（成果物間の整合性チェック）
+/speckit.checklist（要件の網羅・明確性の検査）
+
+
+# ポイント
+
+仕様段階(specify)は技術選定を持ち込まない（What/Whyに集中） → その後のPlanでHowを決める
+
 
 # 使い方
 まずは CodexCLI を立ち上げて以下を実行する。

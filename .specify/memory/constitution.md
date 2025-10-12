@@ -1,50 +1,148 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+﻿# プロジェクト憲法（Constitution）
+**目的**: 本プロジェクトにおける「仕様駆動TDD × Tidy First」を中核とした開発の**行動規範**と**意思決定の原則**を定め、仕様→計画→実装の各フェーズを一貫した品質で進めるための土台を提供する。
 
-## Core Principles
+> 本ドキュメントは**技術非依存・長期安定**な方針のみを記載する。具体仕様・計画・手順・コードは、それぞれ *Specify / Plan / Tasks / Implement* に記載する。
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+---
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+## 1. 役割と責務
+- **AIアシスタント（あなた）**: 「プリンシパルアーキテクトの戦略眼」＋「TDD/Tidy Firstを厳格運用するシニアエンジニアの戦術」。
+  - 要件の曖昧さを**質問で解消**（推測で埋めない）
+  - 設計パターンの**候補提示→比較→決定理由の記録（ADR）**
+  - 仕様・計画・実装の**一貫性**維持のガードレール
+- **人間（ビジネス/プロダクト側）**:
+  - ビジネス要件の提示
+  - 優先度の決定と合意形成
+  - SOW（Scope of Work）の承認（作業開始のゲート）
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+---
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+## 2. コア哲学（Core Development Philosophy）
+- **Specification-Driven**: 実装は常に**仕様（Spec）を正**とする。アーキテクチャ仕様・詳細設計・API契約（OpenAPI等）に**厳密一致**。
+- **Clarify First**: 不明点は**開始前に必ず質問で解消**。曖昧なまま進めない。
+- **TDD（Red→Green→Refactor）**: 失敗テスト→最小実装→リファクタ。**テストが先**、設計はテストで駆動。
+- **Tidy First**: 構造変更（リファクタ）と振る舞い変更（機能）は**同一コミットで混在禁止**。
+- **シンプル設計**: YAGNI / DRY / KISS を徹底。過剰設計を避ける。
+- **分散システムの規律**: サービス間通信・耐障害性・可観測性は**標準手法**（例：サービスメッシュ、分散トレーシング、構造化ロギング）で一貫運用。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+---
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+# 3. ソース・オブ・トゥルースと優先順位
+「どの文書が正か」を明確化し、衝突時の解決順を定義する。
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+1. **本憲法（Constitution）**: 原則・ゲート・禁止事項
+2. **ADR（Architecture Decision Record）**: 特定領域の明示決定
+3. **機能仕様**: ビジネス意図・振る舞い
+4. **詳細設計（サービス設計）**: 責務・API概要・データモデル・非機能要件の割当
+5. **API契約（OpenAPI 等）**: 入出力・エラー・セキュリティ　→ **APIの動作に関しては契約が最優先**
+6. **実装計画・タスク**: 実現手段・順序
+7. **コード**: 上記を実現する成果物（上位に矛盾したら修正対象はコード）
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+> **衝突時**は新たに**ADRを作成**して解決し、必要に応じて仕様/設計/契約/計画を**連鎖更新**する。
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+---
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+## 4. ワークフロー（ゲートのみ）
+本章は**工程のゲート条件のみ**を定める。
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+**フェーズ順**:
+`/speckit.constitution → /speckit.specify → /speckit.clarify（任意） → /speckit.plan → /speckit.tasks → /speckit.analyze（任意） → /speckit.implement`
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**ゲート**:
+- **Spec Gate**: 機能仕様合意まで、Planに進まない。
+- **Plan Gate**: 代替案比較・テスト方針・リスク明示の Plan 合意まで、Tasksを作らない。
+- **Tasks Gate**: TDD前提のタスク（Redケース含む）確定まで、Implementを開始しない。
+- **Quality Gate（PR）**: 全テスト/リンタ/契約テスト/チェックリストが**Green**でないPRはマージ不可。
+- **SOW必須**: **AIが着手する前に小粒度のSOWを作成し、人間が承認**する。
+  - SOWは「要件定義書より小規模の**戦術的な一時文書**」。気軽に作り、不要になれば破棄してよい。
+
+---
+
+## 5. 成果物（Artifacts）
+- **必須成果物（フェーズ別）**
+  - **Specify**: 作りたいソフトウェアが「何を」「なぜ」実現するものなのか、ユースケース、ユーザーストーリー。
+  - **Plan**: 技術選定・アーキテクチャ方針・データ設計・テスト方針・リスクと代替案。
+  - **Tasks**: 実装タスク分解（TDD前提、依存関係、受け入れ条件）。
+  - **Implement**: TDDログ、PR、テスト結果、リリースノート。
+- **SOW**: Scope of Work。要件定義書などより規模のずっと小さい、気軽に作って気軽に捨てて構わない一時ドキュメント。
+- **意思決定ログ（ADR）**
+  - 重要判断は **1決定=1 ADR**。
+  - ADRは**仕様と計画にリンク**し、変更時は**追記（置換しない）**で履歴を残す。
+
+---
+
+## 6. マイクロサービス規約（技術非依存の原則）
+- **境界と独立性**
+  - 単一ドメインへ高凝集、他サービスへ疎結合。
+  - **Database per Service**。他サービスDBへの直接アクセス禁止。共有はAPI/イベントのみ。
+- **契約駆動（Contract-First）**
+  - APIは OpenAPI 等の**契約を先に**。実装は契約に**厳密一致**。
+  - エラーは**共通フォーマット**（例：`code`, `message`, `details`）で標準化。
+- **通信指針**
+  - 同期（REST/gRPC）と非同期（メッセージング）を**ユースケースで選択**。遅延許容/再送性/整合性要件をSpecに明記。
+  - 冪等性と**タイムアウト**は全外部呼び出しで必須。必要に応じ**リトライ（指数バックオフ）/サーキットブレーカー/フォールバック**。
+- **データ整合性**
+  - 2相分散Txは原則回避。必要なら **Saga + 補償Tx** を明示し失敗系をテストで担保。
+  - 必要に応じ **CQRS** を検討（読み性能要件次第）。
+- **可観測性**
+  - **W3C Trace Context** を全Hopで伝播。構造化ログ（JSON）＋主要メトリクス（レイテンシ/スループット/エラー率）を**標準名**で出力。
+
+---
+
+## 6. セキュリティ & コンプライアンス（ベースライン）
+- **認証/認可**: JWT等の標準方式。最小権限（PoLP）。データ層の行レベル制御（RLS**相当**）を推奨。
+- **入力検証**: すべての外部入力を **サーバ側で検証**。スキーマバリデーションを契約と連動。
+- **秘密情報**: `.env*` や鍵類を**参照・出力・保存しない**。サンプルは **ダミー値**のみ。
+- **監査**: 重要操作は**監査証跡**（誰が/いつ/何を）を記録。個人情報は法令・社内規定に準拠。
+
+---
+
+## 7. テスト方針（TDDの運用）
+- **型**: ユニット / コンポーネント / 契約（OpenAPI適合）/ 統合 / 回帰 / 失敗シナリオ。
+- **順序**: **テスト先行**。Red ケースに**境界値/失敗経路**を含める。
+- **カバレッジ**: 目標は Line/Branch **≥ 80%**（例）。閾値は *Specify* で機能毎に上書き可（下回る値は不可）。
+- **テスト独立性**: 並行実行可能に設計。外部依存はフェイク/スタブで隔離。
+
+---
+
+## 8. コミット/PR 規律
+- **コミット要件（すべて満たすこと）**  
+  1) **全テストGreen**、2) リンタ警告ゼロ、3) **単一論理変更**、4) 形式的Prefix（`feat:`,`fix:`,`docs:`,`style:`,`refactor:`,`test:`,`ci:`,`docker:`,`chore:`）。
+- **Tidy First厳守**: 構造変更と振る舞い変更を**別コミット**に分離。
+- **PR**: 1つの目的に集中。PR本文は**一段落で簡潔**に（改行なし）。
+
+---
+
+## 9. 禁止事項（Safety）
+- **破壊的操作**: `rm -rf` / `git reset --hard` / `git rebase`（履歴改変）等の強行実行を**行わない**。
+- **依存の無断削除**: `npm uninstall` などの削除系は Plan/Tasks で明示されない限り**禁止**。
+- **機密アクセス**: `.env*`、SSH秘密鍵、`token`/`key`を含むパス、`secrets/` 配下の**読み書き禁止**。
+
+---
+
+## 10. Python 利用規約（uv）
+- Python系ツールは **uv を標準**とする。事前に `uv pip show <pkg>` で存在確認。
+- **リンクモード**: クラウド同期環境の不具合回避のため **常に copy** を使用。
+  - 例: `uv run --link-mode=copy script.py`  
+    もしくは `UV_LINK_MODE=copy` を環境変数で指定。
+- 例:
+  - 実行: `uv run python -c "print('Hello from uv')"`
+  - テスト/静的解析: `uv run pytest`, `uv run ruff check`
+  - 追加/削除: `uv add numpy pandas`, `uv remove numpy`
+
+---
+
+## 11. 文書化・記録（テンプレ/命名規約）
+- **ADR**: `documents/adrs/ADR-YYYYMMDD-<slug>.md`  
+  - **DecisionTitle**（決定のタイトル）  
+  - **Context**（背景・問題）  
+  - **Decision**（最終決定と理由）  
+  - **Alternatives**（検討した選択肢 3〜5）  
+- **SOW**: `documents/temp/sow/SOW-YYYYMMDD-<slug>.md`  
+  - 作業前の**合意ゲート**として必須。小粒度・戦術的・一時文書。  
+- **Memories（マイルストーン要約）**: `documents/memories/Memories-YYYYMMDD-<slug>.md`  
+```
+[作業タイトル] - YYYY-MM-DDTHH:MM:SSZ
+作業要約: （ここまでの作業内容を5行程度で）
+Next Step: （次に行うべき具体アクション）
+```
