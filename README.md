@@ -77,10 +77,11 @@ specify check
 
 ### エージェント内で順に実行
 /speckit.constitution  品質・テスト・UX一貫性・性能に関する原則を作って
-/speckit.specify       何を作るか（WHAT/WHY）を定義
+/speckit.specify       何を作るか（WHAT/WHY）を定義。「ビジネスドメインとユースケース」を書く。この段階ではスタックや方式は書かないのが公式推奨
 /speckit.clarify       曖昧さを解消（推奨オプション）
-/speckit.plan          技術計画（スタック/アーキテクチャ）
-/speckit.tasks         実行タスクリスト生成
+/speckit.plan          技術計画（スタック/アーキテクチャ）。マイクロサービス方針と生成してほしいドキュメントを明確に書く。specs/<feature>/plan.md / data-model.md / contracts/ ... など複数の技術文書を出すので、ここにArchitecture.md / Design.md / OpenAPI.yaml を追加で作る旨を盛り込む。SpecKitに合わせるなら各サービスを**“機能（feature）”**として扱うと運用が楽。
+/speckit.tasks         実行タスクリスト生成。実装タスクをサービス単位に分割する。
+/speckit.analyze       成果物間の整合性チェック（推奨オプション）
 /speckit.implement     タスク実行・TDDで実装
 
 ※任意ツール:
@@ -115,6 +116,12 @@ Instructions1.md の内容を確認して実行してください。
 
 *   **/prompts:speckit.plan - 実装計画を作成**
     *   仕様書をもとに、どのような技術（プログラミング言語、フレームワークなど）を使って「どのように」作るかの技術的な計画をAIに立てさせます。
+
+
+
+各マイクロサービスは機能（feature）として扱ってください。
+
+
 
 *   **/prompts:speckit.tasks - 実行可能なタスクを生成**
     *   計画をもとに、実装に必要な作業を具体的なタスクの一覧としてAIに細かく分解させます。
