@@ -12,8 +12,8 @@ winget install jj-vcs.jj
 # scoop install main/jj
 
 # 2) 初期設定（ユーザー名/メール）
-jj config set --user user.name  "smorce"
-jj config set --user user.email "smorcepie@gmail.com"
+jj config set --user user.name  "xxx"(マスキング)
+jj config set --user user.email "zzz@gmail.com"(マスキング)
 
 # 3) シェル補完（PowerShell）を永続化（公式手順）
 if (!(Test-Path $PROFILE)) { New-Item -ItemType File -Path $PROFILE -Force | Out-Null }
