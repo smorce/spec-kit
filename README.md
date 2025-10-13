@@ -65,15 +65,26 @@ specify check
 
 # Codex の /speckit. がメニューに出てこない問題の対処方法
 
-ホーム側の方の .codex フォルダにある prompts フォルダしか認識されないバグがあるため、以下のスクリプトを実行してホーム側の .codex/prompts を最新化する。
+ホーム側の方の .codex フォルダにある prompts フォルダしか認識されないバグがあるため、ルートディレクトリにある prompts フォルダを更新してから、以下のスクリプトを実行してホーム側の .codex/prompts を最新化する。
 
 ```
 .specify/scripts/powershell/copy-prompts.ps1
 ```
 
-
+# Spec kit の仕様
 
 実務フローは Constitution → Specify → Plan → Tasks → Implement の順で、必要に応じて Clarify / Analyze / Checklist を挿入して品質を高めます。
+
+# ポイント
+
+- Spec Kit は「Spec → Plan → Tasks → Implement」のゲート制で回すので、1つのプロンプトに詰め込みすぎないこと
+- 仕様段階(specify)は技術選定を持ち込まない（What/Whyに集中） → その後のPlanでHowを決める
+- /plan はコンテキスト（目的）＋技術選定＋原則＋出力ファイルの厳密指定に絞ると、モデルがテンプレに沿った plan.mdを安定生成します
+- /plan はPlan を作るだけ。タスク分解は /speckit.tasks、実装は /speckit.implement に流すのが基本ラインです。
+
+# 使い方
+
+まずは CodexCLI を立ち上げて以下を実行する。
 
 ### エージェント内で順に実行
 /speckit.constitution  品質・テスト・UX一貫性・性能に関する原則を作って
@@ -88,47 +99,6 @@ specify check
 /speckit.clarify（不足要件の質疑応答）
 /speckit.analyze（成果物間の整合性チェック）
 /speckit.checklist（要件の網羅・明確性の検査）
-
-
-# ポイント
-
-仕様段階(specify)は技術選定を持ち込まない（What/Whyに集中） → その後のPlanでHowを決める
-
-
-# 使い方
-まずは CodexCLI を立ち上げて以下を実行する。
-
-*   **/prompts:speckit.constitution - プロジェクトの原則を確立**
-    *   開発の基本的なルールや方針（例えば、使用するプログラミング言語の規約など）をAIに定義させます。
-
-
-Instructions1.md の内容を確認して実行してください。
-
-
-
-コード品質とテスト方針、UI一貫性、性能要件について原則を作って
-
-
-
-
-*   **/prompts:speckit.specify - ベースライン仕様を作成**
-    *   作りたいソフトウェアが「何を」「なぜ」実現するものなのかをAIに伝え、詳細な仕様書を作成させます。
-
-*   **/prompts:speckit.plan - 実装計画を作成**
-    *   仕様書をもとに、どのような技術（プログラミング言語、フレームワークなど）を使って「どのように」作るかの技術的な計画をAIに立てさせます。
-
-
-
-各マイクロサービスは機能（feature）として扱ってください。
-
-
-
-*   **/prompts:speckit.tasks - 実行可能なタスクを生成**
-    *   計画をもとに、実装に必要な作業を具体的なタスクの一覧としてAIに細かく分解させます。
-
-*   **/prompts:speckit.implement - 実装を実行**
-    *   生成されたタスクリストに従って、AIに実際のコーディング（実装）を開始させます。
-
 
 
 
