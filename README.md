@@ -106,7 +106,9 @@ specify check
 /speckit.checklist     2回目のチェック。設計の妥当性チェック。チェックリスト分 実行。
 /speckit.tasks         実行タスクリスト生成。実装タスクをサービス単位に分割する。
 /speckit.analyze       成果物間の整合性チェック（推奨オプション）
-/speckit.implement     タスク実行・TDDで実装（タスク順にローカルCLIを叩きながら構築→Github Acitonsではなく、JJ + Jules でやる）
+※ /speckit.implement     タスク実行・TDDで実装（タスク順にローカルCLIを叩きながら構築）
+/speckit.implement は使わずに「uv run orchestrate_jj_jules_from_specs.py」を実行してこれで実装する。このスクリプトは「JJ + Jules」。
+
 
 ※任意ツール:
 /speckit.clarify（不足要件の質疑応答）
