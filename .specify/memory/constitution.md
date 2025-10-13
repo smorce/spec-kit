@@ -23,6 +23,20 @@
 - **シンプル設計**: YAGNI / DRY / KISS を徹底。過剰設計を避ける。
 - **分散システムの規律**: サービス間通信・耐障害性・可観測性は**標準手法**（例：サービスメッシュ、分散トレーシング、構造化ロギング）で一貫運用。
 
+以下はLLMアプリを実装する際の設計原則:
+- **Natural Language → Tool Calls**: 自然言語は構造化ツール呼び出しに還元する。
+- **Own Your Prompts**: プロンプトは一級のコードとして所有（バージョン管理・テスト・レビュー）。
+- **Own Your Context Window**: コンテキストは設計対象。履歴を圧縮・最適化して渡す。
+- **Tools are Structured Outputs**: ツールは厳格な構造化出力（JSON）として扱い、実行はアプリ側で行う。
+- **Unify Execution State & Business State**: 実行状態と業務状態はスレッドに統合し、単一の真実源とする。
+- **Launch / Pause / Resume with Simple APIs**: Launch/Pause/Resume をAPIで提供し、長時間ジョブと人間承認を安全に扱う。
+- **Contact Humans with Tool Calls**: 人間への問い合わせもツールコールとして定義・記録する。
+- **Own Your Control Flow**: 制御フロー（ループ/リトライ/メモリ）はフレームワーク任せにせず、明示的に設計・テストする。
+- **Compact Errors into Context Window**: エラーは要約して次ターンに注入し自己修復を促す。閾値で人間へエスカレーション。
+- **Small, Focused Agents**: エージェントは小さく集中（3〜20ターン）。大目標は分割する。
+- **Trigger from Anywhere**: Cron/Webhook/Chat 等あらゆるトリガをスレッドに正規化する。
+- **Stateless Reducer**: エージェントはステートレス・リデューサ（`(thread, event) -> new_thread`）として設計する。
+
 ---
 
 # 3. ソース・オブ・トゥルースと優先順位
