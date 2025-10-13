@@ -1,3 +1,12 @@
+# to do
+
+- これでウォーターフォール型バイブコーディングが実践できる
+  - S&P TOP10 効率的フロンティア
+  - メモリーム
+    - 一旦 Obsidian を優先する
+
+
+
 codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 
 codex -m gpt-5-codex --yolo -c model_reasoning_effort="high" --search "$@"
