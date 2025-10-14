@@ -7,7 +7,7 @@
 
 /speckit.specify を実行する。
 ↓
-/prompts:speckit.specify SpecifyPrompt.md を確認してください。
+/prompts:speckit.specify Memorium.md を確認してください。
  
 
 codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
