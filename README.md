@@ -155,6 +155,7 @@ specify check
 # 使い方
 
 まずは CodexCLI を立ち上げて以下を実行する。
+codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 
 ### エージェント内で順に実行
 /speckit.constitution  品質・テスト・UX一貫性・性能に関する原則を作って
