@@ -16,7 +16,7 @@
 ↓
 /prompts:speckit.plan {planの指示書はこちら.mdの内容を貼る}
 ↓
-/prompts:speckit.checklist {speckit.checklist1 の指示書はこちら.mdの内容を貼る}
+/prompts:speckit.checklist {speckit.checklist1 の指示書はこちら.mdの内容を貼る}  ← 今ココ。次はこれをやる。
 /prompts:speckit.checklist {speckit.checklist2 の指示書はこちら.mdの内容を貼る}
 /prompts:speckit.checklist {speckit.checklist3 の指示書はこちら.mdの内容を貼る}
 

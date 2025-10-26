@@ -1,23 +1,19 @@
-/speckit.checklist
 目的:
 - LLMアプリケーションをプロトタイプから本番レベルに引き上げるため、共通の「本番レベルのLLMアプリケーションの設計原則チェックリスト」を生成・更新する。
+- ただし、今回の仕様とは合わないものは除外する。不明な場合はユーザーに確認する。
 
 適用範囲:
 - [000-architecture] 全体アーキテクチャの基盤原則
 - 001- 以降の各 feature（＝各マイクロサービス）
 
-======= ここは毎回書き換える。例えば課金が不要なら Payments の項目は消すなど。 =======
 前提スタック:
-- Next.js (SSR) → OpenNext 経由 Cloudflare Workers（SSR/API/Middleware）
-- DB: Neon (serverless PostgreSQL)
-- Auth: Supabase Auth（JWT、RLS: 原則 `user_id = auth.uid()`）
-- Storage: Cloudflare R2（画像配信は Cloudflare Images）
-- Payments: Stripe
-- Domain/CDN/Security: Cloudflare（Registrar/CDN/WAF/Cache）
-- Perf: wrangler.jsonc `minify: true`、画像はオンデマンド変換
+- ローカルでの開発(個人プロジェクト)
+- データの暗号化はしない
+- データインサートと検索は MiniRAG フレームワーク(Python)を利用する
+  - documents/MiniRAG
 
 指示:
-- 生成物は `specs/_shared/checklists/llm-production.md` に Markdown として**上書き保存**。
+- 生成物は `specs/[001-XXX]/checklists/llm-production.md` に Markdown として**上書き保存**。
 
 ### 本番レベルのLLMアプリケーションの設計原則チェックリスト
 
