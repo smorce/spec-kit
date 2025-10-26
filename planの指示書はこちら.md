@@ -1,20 +1,15 @@
-/speckit.plan
-
 本プロダクトは仕様駆動TDDによるエンタープライズ級マイクロサービスアーキテクチャを採用します。 [000-architecture]で全体アーキテクチャを定義し、 001-feature 以降に各マイクロサービス(ここでは feature として扱う)を定義します。
 [000-architecture]は本プロダクト全体のマイクロサービスアーキテクチャを定義し、以後の各 feature の基盤とする。
 
 Goal:
 - 本プロダクトの仕様駆動TDDを前提に、エンタープライズ級マイクロサービス基盤の計画(plan.md)を作成する。
 
-======= ここは毎回書き換える。例えば課金が不要なら Payments の項目は消すなど。 =======
 Tech stack (serverless/edge):
 - Next.js (SSR) → OpenNext 経由 Cloudflare Workers（SSR/API/Middleware）
 - DB: Neon (serverless PostgreSQL)
 - Auth: Supabase Auth（JWT、RLS: 原則 `user_id = auth.uid()`）
 - Storage: Cloudflare R2（画像配信は Cloudflare Images）
-- Payments: Stripe
-- Domain/CDN/Security: Cloudflare（Registrar/CDN/WAF/Cache）
-- Perf: wrangler.jsonc `minify: true`、画像はオンデマンド変換
+- データの暗号化はしない
 
 Architecture principles:
 - Database per Service、同期/非同期の使い分け、イベント駆動（必要に応じ Saga/CQRS 検討）
@@ -23,7 +18,7 @@ Architecture principles:
 
 Front End:
 - documents/フロントエンド を参考に Cloudflare で動くように実装する
-- UI: UIのサンプルイメージ。Neo4jではなくポスグレを使う.jpg
+- UI: `UIのサンプルイメージ。Neo4jではなくポスグレを使う.jpg`
 
 Deliverables (write):
 - `specs/[000-architecture]/plan.md`：以下の7章立て（1. Executive Summary/Goals, 2. NFR, 3. 全体アーキテクチャ, 4. 各マイクロサービス概要, 5. 技術スタックと選定理由(代替比較), 6. セキュリティ/コンプラ, 7. 運用/パフォーマンス）
