@@ -14,7 +14,7 @@
 
 指示:
 - 下記カテゴリで、実装者が Red/Green/Refactor の各段階で確認できる粒度のチェック項目を作り、受け入れ条件（Accept/Fail例、観測可能な証拠）を付与する。
-- 生成物は `specs/[001-XXX]/checklists/microservices.md` に Markdown として**上書き保存**。
+- 生成物は `specs/[ブランチ名]/checklists/microservices.md` に Markdown として**上書き保存**。
 
 ### マイクロサービス実装チェックリスト
 

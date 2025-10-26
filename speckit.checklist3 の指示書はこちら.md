@@ -13,7 +13,7 @@
   - documents/MiniRAG
 
 指示:
-- 生成物は `specs/[001-XXX]/checklists/security.md` に Markdown として**上書き保存**。
+- 生成物は `specs/[ブランチ名]/checklists/security.md` に Markdown として**上書き保存**。
 
 # 統合セキュリティガイドライン チェックリスト
 

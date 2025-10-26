@@ -13,7 +13,7 @@
   - documents/MiniRAG
 
 指示:
-- 生成物は `specs/[001-XXX]/checklists/llm-production.md` に Markdown として**上書き保存**。
+- 生成物は `specs/[ブランチ名]/checklists/llm-production.md` に Markdown として**上書き保存**。
 
 ### 本番レベルのLLMアプリケーションの設計原則チェックリスト
 
