@@ -155,15 +155,15 @@
   - 役割: SOWやタスクリストに基づき実行した**作業の要約**をマイルストーンごとに記録し、プロジェクトの実行履歴を追跡可能にする。
   - 記録内容: 対応SOW、達成事項、発生した問題、次のステップ、関連PRへのリンク。
 - **thinking**（思考ログ）
-  - 保存場所: `_docs/thinking/XXXXX-YYYYMMDD-<slug>.md`
+  - 保存場所: `_docs/thinking/THINK-YYYYMMDD-<slug>.md`
   - 役割: 設計判断や思考過程を外部化する。候補の列挙、比較、却下理由、迷い、判断根拠を短文で残す。  
   - 記録内容: 候補比較のスナップショット、却下理由、採択案の根拠、次の一手。**最終決定は置かない**。必ず関連 **ADR** へのリンクを付ける。
 - **features**（機能メモ）
-  - 保存場所: `_docs/features/XXXXX-YYYYMMDD-<slug>.md`
+  - 保存場所: `_docs/features/FEATURE-YYYYMMDD-<slug>.md`
   - 役割: 新機能の追加・改修の目的と背景を簡潔に残す。  
   - 記録内容: 実装目的、画面/入出力の要点、データ構造のポイント、リスク、完了条件（受け入れ条件）。
 - **deleted**（削除ログ）
-  - 保存場所: `_docs/deleted/XXXXX-YYYYMMDD-<slug>.md`
+  - 保存場所: `_docs/deleted/DELETED-YYYYMMDD-<slug>.md`
   - 役割: 削除・廃止した機能やファイルの履歴を残し、理由と影響を追跡できるようにする。  
   - 記録内容: 削除理由、影響範囲、代替手段、再発防止策、関連PR/Issue参照。
 
