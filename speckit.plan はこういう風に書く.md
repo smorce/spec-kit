@@ -21,6 +21,10 @@ Architecture principles:
 - API Gateway／データ分割／イベント流を明示
 - 可観測性：構造化ログ、メトリクス、分散トレーシング（W3C Trace Context 伝播）
 
+Front End:
+- documents/フロントエンド を参考に Cloudflare で動くように実装する
+- UI: UIのサンプルイメージ。Neo4jではなくポスグレを使う.jpg
+
 Deliverables (write):
 - `specs/[000-architecture]/plan.md`：以下の7章立て（1. Executive Summary/Goals, 2. NFR, 3. 全体アーキテクチャ, 4. 各マイクロサービス概要, 5. 技術スタックと選定理由(代替比較), 6. セキュリティ/コンプラ, 7. 運用/パフォーマンス）
 - `specs/[000-architecture]/research.md`：主要な設計判断と代替案比較（ADR 形式で可）
@@ -28,6 +32,10 @@ Deliverables (write):
 
 NFR targets (例値はダミーなので合理的に提案して更新してよい):
 - p95 レイテンシ X ms（要ページ/エンドポイント別の目標）、可用性 99.9% 以上、RPO ≤ Y 分、RTO ≤ Z 分、監査ログ保持 年数 N
+
+Collision Resolution Rules:
+1. specs/001-memorium-md/spec.md を優先する
+2. 不明な場合はユーザーに質問する
 
 Out-of-scope:
 - ここでは実装や詳細タスク化はしない。`/speckit.tasks` で分解、`/speckit.implement` で実行する。

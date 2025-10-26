@@ -8,7 +8,10 @@
 /speckit.specify を実行する。
 ↓
 /prompts:speckit.specify Memorium.md を確認してください。
- 
+↓
+/prompts:speckit.checklist speckit.checklist1 はこういう風に書く.md を確認してください。
+
+
 
 codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 
@@ -112,6 +115,8 @@ codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 /speckit.analyze       成果物間の整合性チェック（推奨オプション）
 ※ /speckit.implement     タスク実行・TDDで実装（タスク順にローカルCLIを叩きながら構築）
 /speckit.implement は使わずに「uv run orchestrate_jj_jules_from_specs.py」を実行してこれで実装する。このスクリプトは「JJ + Jules」。
+/speckit.codeReview.md
+
 
 
 ※任意ツール:
@@ -120,6 +125,14 @@ codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 /speckit.checklist（要件の網羅・明確性の検査。品質チェックリスト生成）
 
 
+# AIコーディングの心得
+
+https://qiita.com/chomado/items/764e67e104843a22bcde
+- AI 駆動開発はマイクロサービスに向いててモノリスには向かない
+- AI は便利だが、嘘をついたり誤魔化したり嬉々として破壊的変更をするので、うまく使おう
+- 常に検証・テスト・レビューを実施​
+  - /speckit.checklist
+  - /speckit.analyze
 
 
 ---
