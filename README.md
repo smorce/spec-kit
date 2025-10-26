@@ -5,6 +5,8 @@
   - メモリーム
     - 一旦 Obsidian を優先する
 
+- PowerShell ではなく WSL で作業しないとちゃんとプロンプトを読み込んでくれないので、ターミナルでは WSL を起動する。
+
 /prompts:speckit.constitution プロジェクト憲章を読み込んでください。
 ↓
 /prompts:speckit.specify Memorium.md を確認してください。
