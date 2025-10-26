@@ -8,7 +8,9 @@
 ### PowerShell ではなく WSL で作業しないとちゃんとプロンプトを読み込んでくれないので、ターミナルでは WSL を起動する。
 
 流れ:
+```これは毎回最初にやる
 プロジェクト憲章（.specify/memory/constitution.md）を読み込んでください。
+```
 ↓
 /prompts:speckit.specify Memorium.md を確認してください。
 ↓
