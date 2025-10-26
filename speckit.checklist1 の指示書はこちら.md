@@ -1,6 +1,6 @@
-/speckit.checklist
 目的:
 - 仕様駆動TDDの分散システム品質を保つため、共通の「マイクロサービス実装チェックリスト」を生成・更新する。
+- ただし、今回の仕様とは合わないものは除外する。不明な場合はユーザーに確認する。
 
 適用範囲:
 - [000-architecture] 全体アーキテクチャの基盤原則
@@ -18,7 +18,7 @@
 
 指示:
 - 下記カテゴリで、実装者が Red/Green/Refactor の各段階で確認できる粒度のチェック項目を作り、受け入れ条件（Accept/Fail例、観測可能な証拠）を付与する。
-- 生成物は `specs/_shared/checklists/microservices.md` に Markdown として**上書き保存**。
+- 生成物は `specs/[ブランチ名]/checklists/microservices.md` に Markdown として**上書き保存**。
 
 ### マイクロサービス実装チェックリスト
 

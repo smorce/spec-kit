@@ -1,6 +1,6 @@
-/speckit.checklist
 目的:
 - セキュリティチェック用のチェックリストを生成・更新する。
+- ただし、今回の仕様とは合わないものは除外する。不明な場合はユーザーに確認する。
 
 適用範囲:
 - [000-architecture] 全体アーキテクチャの基盤原則
@@ -17,7 +17,7 @@
 - Perf: wrangler.jsonc `minify: true`、画像はオンデマンド変換
 
 指示:
-- 生成物は `specs/_shared/checklists/security.md` に Markdown として**上書き保存**。
+- 生成物は `specs/[ブランチ名]/checklists/security.md` に Markdown として**上書き保存**。
 
 # 統合セキュリティガイドライン チェックリスト
 
