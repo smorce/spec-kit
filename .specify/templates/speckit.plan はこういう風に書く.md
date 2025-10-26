@@ -4,14 +4,27 @@
 Goal:
 - 本プロダクトの仕様駆動TDDを前提に、エンタープライズ級マイクロサービス基盤の計画(plan.md)を作成する。
 
-Tech stack:
-- ローカルでの開発(個人プロジェクト)
-- データの暗号化はしない
-- データインサートと検索は MiniRAG フレームワーク(Python)を利用する
-  - documents/MiniRAG
+User:
+- 個人プロジェクトであるため、私のみ
+
+======= ここは毎回書き換える。例えば課金が不要なら Payments の項目は消すなど。 =======
+Tech stack (serverless/edge):
+- Next.js (SSR) → OpenNext 経由 Cloudflare Workers（SSR/API/Middleware）
+- DB: Neon (serverless PostgreSQL)
+- Auth: Supabase Auth（JWT、RLS: 原則 `user_id = auth.uid()`）
+- Storage: Cloudflare R2（画像配信は Cloudflare Images）
+- Payments: Stripe
+- Domain/CDN/Security: Cloudflare（Registrar/CDN/WAF/Cache）
+- Perf: wrangler.jsonc `minify: true`、画像はオンデマンド変換
+- データの暗号化: 不要
+
+Architecture principles:
+- Database per Service、同期/非同期の使い分け、イベント駆動（必要に応じ Saga/CQRS 検討）
+- API Gateway／データ分割／イベント流を明示
+- 可観測性：構造化ログ、メトリクス、分散トレーシング（W3C Trace Context 伝播）
 
 Front End:
-- documents/フロントエンド を参考にする
+- documents/フロントエンド を参考に Cloudflare で動くように実装する
 - UI: `UIのサンプルイメージ。Neo4jではなくポスグレを使う.jpg`
 
 Deliverables (write):
@@ -22,6 +35,9 @@ Deliverables (write):
 - `specs/[001-XXX]/plan.md`： plan.md 作成
 - `specs/[001-XXX]/research.md`：主要な設計判断と代替案比較（ADR 形式で可）
 - `specs/[001-XXX]/quickstart.md`：ローカル開発手順、環境変数、初期マイグレーション、実行方法
+
+NFR targets (例値はダミーなので合理的に提案して更新してよい):
+- p95 レイテンシ X ms（要ページ/エンドポイント別の目標）、可用性 99.9% 以上、RPO ≤ Y 分、RTO ≤ Z 分、監査ログ保持 年数 N
 
 Collision Resolution Rules:
 1. specs/001-XXX/spec.md を優先する
