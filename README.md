@@ -5,8 +5,6 @@
   - メモリーム
     - 一旦 Obsidian を優先する
 
-/speckit.specify を実行する。
-↓
 /prompts:speckit.specify Memorium.md を確認してください。
 ↓
 /prompts:speckit.checklist speckit.checklist1 はこういう風に書く.md を確認してください。
