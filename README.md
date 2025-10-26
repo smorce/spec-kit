@@ -5,11 +5,14 @@
   - メモリーム
     - 一旦 Obsidian を優先する
 
-- PowerShell ではなく WSL で作業しないとちゃんとプロンプトを読み込んでくれないので、ターミナルでは WSL を起動する。
+### PowerShell ではなく WSL で作業しないとちゃんとプロンプトを読み込んでくれないので、ターミナルでは WSL を起動する。
 
+流れ:
 プロジェクト憲章（.specify/memory/constitution.md）を読み込んでください。
 ↓
 /prompts:speckit.specify Memorium.md を確認してください。
+↓
+/prompts:speckit.plan {planの指示書はこちら.mdの内容を貼る}
 ↓
 /prompts:speckit.checklist speckit.checklist1 はこういう風に書く.md を確認してください。
 
@@ -110,9 +113,8 @@ codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 /speckit.constitution  品質・テスト・UX一貫性・性能に関する原則を作って
 /speckit.specify       何を作るか（WHAT/WHY）を定義。「ビジネスドメインとユースケース」を書く。この段階ではスタックや方式は書かないのが公式推奨
 /speckit.clarify       曖昧さを解消（推奨オプション）
-/speckit.checklist     （仕様が固まった直後に）仕様の抜け漏れチェック。チェックリスト分 実行。
 /speckit.plan          技術計画（スタック/アーキテクチャ）。マイクロサービス方針と生成してほしいドキュメントを明確に書く。specs/<feature>/plan.md / data-model.md / contracts/ ... など複数の技術文書を出すので、ここにArchitecture.md / Design.md / OpenAPI.yaml を追加で作る旨を盛り込む。SpecKitに合わせるなら各サービスを**“機能（feature）”**として扱うと運用が楽。
-/speckit.checklist     2回目のチェック。設計の妥当性チェック。チェックリスト分 実行。
+/speckit.checklist     設計の妥当性チェック。チェックリスト分 実行。
 /speckit.tasks         実行タスクリスト生成。実装タスクをサービス単位に分割する。
 /speckit.analyze       成果物間の整合性チェック（推奨オプション）
 ※ /speckit.implement     タスク実行・TDDで実装（タスク順にローカルCLIを叩きながら構築）
