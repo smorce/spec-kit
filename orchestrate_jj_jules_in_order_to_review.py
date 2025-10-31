@@ -100,6 +100,45 @@ SECURITY_REVIEWER_PROMPT_TEMPLATE = """あなたはセキュリティレビュ�
     -   このプロジェクトの性質に基づいて、セキュリティ脆弱性を考慮してください。
 """
 
+REFACTORING_REVIEWER_PROMPT_TEMPLATE = """あなたはリファクタリングレビュー担当エージェントです。
+
+【機能名】{feature_name}
+【機能仕様ディレクトリ】{feature_dir}
+【レビュー対象コードのディレクトリ】{workspace_dir}
+
+### あなたのタスク: 「変更を楽で安全にする」ことを最優先にリファクタリングレビューを実施し、改善提案をマークダウン形式の文書にまとめる
+
+あなたは、指定された機能の実装コードに対して、リファクタリングレビューを専門的に実施する責任があります。
+特に、以下の設計原則に基づいてコードを分析し、改善が必要な点がある場合はそれらをマークダウン形式の文書にまとめ、{workspace_dir}/refactoring_review_results.md に保存してください。
+
+1.  **関心の分離（Separation of Concerns）**:
+    -   各モジュール・クラス・関数の責務は明確に分離されているか？
+    -   1つのモジュールは1つの理由で変わるように設計されているか？
+    -   複数の責務が混在している箇所はないか？
+
+2.  **高凝集（High Cohesion）**:
+    -   モジュール内部で関連する処理が適切にまとめられているか？
+    -   関連性の低い処理が同じモジュールに含まれていないか？
+    -   モジュールの理解と変更が容易な構造になっているか？
+
+3.  **疎結合（Loose Coupling）**:
+    -   外部依存は明示的で最小限になっているか？
+    -   インターフェースを通じて依存関係が適切に隔離されているか？
+    -   モジュール間の依存関係が複雑すぎないか？
+
+4.  **抽象化（Abstraction）**:
+    -   公開インターフェースと実装が適切に分離されているか？
+    -   実装を置換しやすい設計になっているか？
+    -   不要な実装詳細が外部に露出していないか？
+
+5.  **非冗長（DRY: Don't Repeat Yourself）**:
+    -   同じロジックや設定が重複していないか？
+    -   重複しているコードを共通化できる箇所はないか？
+    -   一箇所の変更で全体に反映されるべきロジックが分散していないか？
+
+レビュー結果には、各原則に基づいた具体的な改善提案と、その優先度・影響範囲を含めてください。
+"""
+
 AGENTS = [
     {
         "name": "code_reviewer",
@@ -110,6 +149,11 @@ AGENTS = [
         "name": "security_reviewer",
         "suffix": "security-review",
         "prompt_template": SECURITY_REVIEWER_PROMPT_TEMPLATE,
+    },
+    {
+        "name": "refactoring_reviewer",
+        "suffix": "refactoring-review",
+        "prompt_template": REFACTORING_REVIEWER_PROMPT_TEMPLATE,
     },
 ]
 
