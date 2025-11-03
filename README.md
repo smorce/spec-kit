@@ -142,9 +142,10 @@ codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 
 
 ## orchestrate_jj_jules_from_specs.py
+
 - WSL ではなく PowerShell で「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行して実装する
 - このスクリプトは「JJ + Jules」。
-- このスクリプトを動かす前に git push して、プロジェクトごとどこかにバックアップを取っておく(jj を使うと Git が壊れることがあるらしい)
+- このスクリプトを動かす前に git push して、事前にリポジトリを丸ごと別フォルダへバックアップを取っておく(jj を使うと Git が壊れることがあるらしい)
 - 次に以下を実行する。001-memorium-md はブランチ名。
   - jj git init --colocate
   - jj status
