@@ -6,9 +6,9 @@
 # ---------------------------------------------------------------
 # - specs/ 配下の「機能ディレクトリ」を列挙し、各機能ごとに疑似エージェント用
 #   ワークスペース（jj workspace）を作ります。
-# - 各エージェントに jules のセッションを並列投入します（参照資料はその機能
-#   ディレクトリ内にあることをプロンプトで明示）。
-# - 最後に、すべてのエージェントの成果を 1 つのマージコミットへ統合します。
+# - 各エージェントに jules のセッションを並列投入し、コードレビューを依頼します。
+# - 最後に、すべてのエージェントによるレビュー結果（修正コード）を 1 つの
+#   マージコミットへ統合します。
 #
 # 使い方（Usage）
 # ---------------------------------------------------------------
@@ -59,18 +59,111 @@ ROOT = Path.cwd()
 WS_ROOT = ROOT / "ws"
 DEFAULT_SPECS_DIR = ROOT / "specs"
 
-MERGE_MESSAGE = "各エージェント出力を統合（specs ベース）"
+MERGE_MESSAGE = "各エージェントによるレビュー結果を統合"
 
-# ▼ プロンプトテンプレート（ユーザー要望：1つ追加）
-FEATURE_PROMPT_TEMPLATE = """あなたは担当機能の実装エージェントです。
+# ▼ プロンプトテンプレート
+CODE_REVIEWER_PROMPT_TEMPLATE = """あなたはコードレビュー担当エージェントです。
 
 【機能名】{feature_name}
-【機能ディレクトリ】{feature_dir}
-【リポジトリ作業ディレクトリ（このWS）】{workspace_dir}
+【機能仕様ディレクトリ】{feature_dir}
+【レビュー対象コードのディレクトリ】{workspace_dir}
 
-やること:
-tasks.md を読み、最大限効率化しながら優先度順にタスクを実行してください。必要な資料は {feature_dir} に入っています。
+### あなたのタスク: 包括的なコード品質レビューを実施し、改善が必要な点をマークダウン形式の文書にまとめる
+
+あなたは、指定された機能の実装コードに対して、包括的なコード品質レビューを実施する責任があります。
+特に、以下の点を重点的に確認し、改善が必要な点がある場合はそれらをマークダウン形式の文書にまとめ、{workspace_dir}/code_quality_review_results.md に保存してください。
+
+1.  **設計原則の遵守**:
+    -   DRY (Don't Repeat Yourself), KISS (Keep It Simple, Stupid), YAGNI (You Ain't Gonna Need It)
+    -   SOLID原則
+2.  **テスト品質**:
+    -   機能追加に対応するテストコードが追加・更新されているか？
+    -   テストは十分なカバレッジを持ち、意図が明確で読みやすいか？
+3.  **コード品質と保守性**:
+    -   コードは読みやすく、保守性が高いか？
+    -   命名は適切か？
+    -   複雑すぎるロジックはないか？
 """
+
+SECURITY_REVIEWER_PROMPT_TEMPLATE = """あなたはセキュリティレビュー担当エージェントです。
+
+【機能名】{feature_name}
+【機能仕様ディレクトリ】{feature_dir}
+【レビュー対象コードのディレクトリ】{workspace_dir}
+
+### あなたのタスク: セキュリティ脆弱性レビューを実施し、脆弱性やリスクがある場合はそれらをマークダウン形式の文書にまとめる
+
+あなたは、指定された機能の実装コードに対して、セキュリティ脆弱性のレビューを専門的に実施する責任があります。
+具体的には、以下の活動を通じて、セキュリティ上の問題を特定し、解決策を提示します。
+
+-   **分析**: ソースコードリポジトリを分析し、潜在的な脆弱性を特定します。
+-   **評価**: 特定された脆弱性の悪用可能性を評価し、その深刻度を優先順位付けします。
+-   **提案**: 評価結果に基づき、的を絞った具体的なパッチや修正案を提案します。
+
+レビューの結果、脆弱性やリスクが発見された場合は、それらをマークダウン形式の文書にまとめ、{workspace_dir}/security_vulnerability_review_results.md に保存してください。
+
+レビューを行う際には、特に以下の点を重点的に確認してください。
+
+1.  **プロジェクトの性質の考慮**:
+    -   このプロジェクトの性質に基づいて、セキュリティ脆弱性を考慮してください。
+"""
+
+REFACTORING_REVIEWER_PROMPT_TEMPLATE = """あなたはリファクタリングレビュー担当エージェントです。
+
+【機能名】{feature_name}
+【機能仕様ディレクトリ】{feature_dir}
+【レビュー対象コードのディレクトリ】{workspace_dir}
+
+### あなたのタスク: 「変更を楽で安全にする」ことを最優先にリファクタリングレビューを実施し、改善提案をマークダウン形式の文書にまとめる
+
+あなたは、指定された機能の実装コードに対して、リファクタリングレビューを専門的に実施する責任があります。
+特に、以下の設計原則に基づいてコードを分析し、改善が必要な点がある場合はそれらをマークダウン形式の文書にまとめ、{workspace_dir}/refactoring_review_results.md に保存してください。
+
+1.  **関心の分離（Separation of Concerns）**:
+    -   各モジュール・クラス・関数の責務は明確に分離されているか？
+    -   1つのモジュールは1つの理由で変わるように設計されているか？
+    -   複数の責務が混在している箇所はないか？
+
+2.  **高凝集（High Cohesion）**:
+    -   モジュール内部で関連する処理が適切にまとめられているか？
+    -   関連性の低い処理が同じモジュールに含まれていないか？
+    -   モジュールの理解と変更が容易な構造になっているか？
+
+3.  **疎結合（Loose Coupling）**:
+    -   外部依存は明示的で最小限になっているか？
+    -   インターフェースを通じて依存関係が適切に隔離されているか？
+    -   モジュール間の依存関係が複雑すぎないか？
+
+4.  **抽象化（Abstraction）**:
+    -   公開インターフェースと実装が適切に分離されているか？
+    -   実装を置換しやすい設計になっているか？
+    -   不要な実装詳細が外部に露出していないか？
+
+5.  **非冗長（DRY: Don't Repeat Yourself）**:
+    -   同じロジックや設定が重複していないか？
+    -   重複しているコードを共通化できる箇所はないか？
+    -   一箇所の変更で全体に反映されるべきロジックが分散していないか？
+
+レビュー結果には、各原則に基づいた具体的な改善提案と、その優先度・影響範囲を含めてください。
+"""
+
+AGENTS = [
+    {
+        "name": "code_reviewer",
+        "suffix": "code-review",
+        "prompt_template": CODE_REVIEWER_PROMPT_TEMPLATE,
+    },
+    {
+        "name": "security_reviewer",
+        "suffix": "security-review",
+        "prompt_template": SECURITY_REVIEWER_PROMPT_TEMPLATE,
+    },
+    {
+        "name": "refactoring_reviewer",
+        "suffix": "refactoring-review",
+        "prompt_template": REFACTORING_REVIEWER_PROMPT_TEMPLATE,
+    },
+]
 
 # ---------- 引数処理 ----------
 
@@ -100,58 +193,29 @@ def check_cmd(cmd: str) -> None:
     Raises:
         RuntimeError: コマンドが見つからない場合。
     """
-    # Windows環境では、.cmd/.bat 拡張子も考慮して検索
-    cmd_path = shutil.which(cmd)
-    if cmd_path is None:
-        # Windowsの場合、.cmd 拡張子を付けて再試行
-        if sys.platform == "win32":
-            cmd_path = shutil.which(f"{cmd}.cmd") or shutil.which(f"{cmd}.bat")
-        if cmd_path is None:
-            raise RuntimeError(
-                f"コマンドが見つかりません: {cmd}\n"
-                f"インストール方法: npm install -g @google/jules\n"
-                f"または、PATH環境変数に {cmd} が含まれていることを確認してください。"
-            )
-    
-    # 実際にコマンドが実行可能か確認（--version で試す）
-    if cmd == "jules":
-        code, _, err = run([cmd, "--version"], timeout=5.0)
-        if code != 0:
-            # Windows環境でよくあるエラーパターンをチェック
-            error_lower = err.lower()
-            if any(keyword in error_lower for keyword in ["not found", "見つかりません", "could not find", "program not found"]):
-                raise RuntimeError(
-                    f"コマンド '{cmd}' が見つかりましたが実行できませんでした。\n"
-                    f"詳細: {err}\n"
-                    f"インストール方法: npm install -g @google/jules\n"
-                    f"インストール後、新しいターミナルを開いて再度実行してください。"
-                )
+    if shutil.which(cmd) is None:
+        raise RuntimeError(f"コマンドが見つかりません: {cmd}")
 
-def run(cmd: List[str], cwd: Path | None = None, timeout: float | None = None) -> Tuple[int, str, str]:
+def run(cmd: List[str], cwd: Path | None = None) -> Tuple[int, str, str]:
     """サブプロセスを実行し、終了コード・標準出力・標準エラーを返す。
 
     Args:
         cmd (List[str]): 実行コマンド（引数を含む）。
         cwd (Path | None): 実行ディレクトリ。
-        timeout (float | None): タイムアウト秒数。
 
     Returns:
         Tuple[int, str, str]: (returncode, stdout_stripped, stderr_stripped)
     """
-    try:
-        proc = subprocess.run(
-            cmd,
-            cwd=str(cwd) if cwd else None,
-            text=True,
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-            timeout=timeout,
-        )
-        return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
-    except subprocess.TimeoutExpired as e:
-        return -1, "", f"コマンドがタイムアウトしました: {e}"
+    proc = subprocess.run(
+        cmd,
+        cwd=str(cwd) if cwd else None,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
 
 # ---------- jj まわり ----------
 
@@ -161,33 +225,12 @@ def ensure_alias_for_jules() -> None:
     Notes:
         `aliases.jules = ["util","exec","--","jules"]` を user スコープに設定。
         これで `jj jules ...` が使えるようになる。
-        Windows環境では、jules のフルパスを使用することを試みる。
     """
-    # jules コマンドのパスを取得
-    jules_cmd = "jules"
-    jules_path = shutil.which("jules")
-    if jules_path:
-        jules_cmd = jules_path
-    elif sys.platform == "win32":
-        # Windows環境では .cmd/.bat 拡張子も試す
-        jules_cmd_alt = shutil.which("jules.cmd") or shutil.which("jules.bat")
-        if jules_cmd_alt:
-            jules_cmd = jules_cmd_alt
-    
-    # jules が見つからない場合でも、デフォルトで "jules" を使用（後でエラーになる）
-    alias_value = f'["util","exec","--","{jules_cmd}"]'
-    
     code, out, err = run(
-        ["jj", "config", "set", "--user", "aliases.jules", alias_value]
+        ["jj", "config", "set", "--user", "aliases.jules", '["util","exec","--","jules"]']
     )
     if code != 0:
         raise RuntimeError(f"jj の別名設定に失敗しました: {err or out}")
-    
-    # 設定した jules コマンドが実際に動作するか確認
-    if jules_path:
-        console.log(f"jules コマンドのパス: {jules_cmd}")
-    else:
-        console.log(f"警告: jules コマンドのパスを取得できませんでした。デフォルトの 'jules' を使用します。")
 
 def ensure_repo_context() -> None:
     """実行ディレクトリが jj リポジトリかざっくり確認する。"""
@@ -233,9 +276,6 @@ def find_feature_dirs(specs_dir: Path) -> List[Path]:
     if ARGS.name_regex:
         pat = re.compile(ARGS.name_regex)
         dirs = [p for p in dirs if pat.search(p.name)]
-    if ARGS.require-tasks if False else False:  # placeholder to keep linter calm
-        pass  # will be replaced below
-
     if ARGS.require_tasks:
         dirs = [p for p in dirs if (p / "tasks.md").exists()]
 
@@ -243,52 +283,45 @@ def find_feature_dirs(specs_dir: Path) -> List[Path]:
 
 # ---------- エージェント生成・投下 ----------
 
-def make_workspace_name(feature_dir: Path) -> str:
-    """機能ディレクトリ名からワークスペース名を作る。
+def make_workspace_name(feature_dir: Path, agent_suffix: str) -> str:
+    """機能ディレクトリ名とエージェント接尾辞からワークスペース名を作る。
 
-    例: specs/001-create-taskify -> ws/spec-001-create-taskify
+    例: specs/001-create-taskify, "code-review" -> ws/spec-001-create-taskify-code-review
     """
-    return f"spec-{feature_dir.name}"
+    return f"spec-{feature_dir.name}-{agent_suffix}"
 
-def build_feature_prompt(feature_dir: Path, ws_dir: Path) -> str:
+def build_feature_prompt(feature_dir: Path, ws_dir: Path, prompt_template: str) -> str:
     """機能用の共通プロンプトを作る。"""
-    return FEATURE_PROMPT_TEMPLATE.format(
+    return prompt_template.format(
         feature_name=feature_dir.name,
         feature_dir=str(feature_dir),
         workspace_dir=str(ws_dir),
     )
 
-def create_feature_workspaces(feature_dirs: List[Path]) -> List[Tuple[Path, Path, str]]:
-    """機能ごとのワークスペースを作り、(feature_dir, ws_dir, prompt) を返す。
+def create_feature_workspaces(feature_dirs: List[Path]) -> List[Tuple[Path, str]]:
+    """機能ごと x エージェントごとにワークスペースを作り、(ws_dir, prompt) を返す。
 
     物理ディレクトリ作成ののち、`jj workspace add` を実行する。
     """
-    results: List[Tuple[Path, Path, str]] = []
+    results: List[Tuple[Path, str]] = []
+    total_ws = len(feature_dirs) * len(AGENTS)
     with Progress(transient=True) as progress:
-        task = progress.add_task("[bold]ワークスペースを作成中...", total=len(feature_dirs))
+        task = progress.add_task("[bold]ワークスペースを作成中...", total=total_ws)
         for fdir in feature_dirs:
-            ws_name = make_workspace_name(fdir)
-            ws_dir = WS_ROOT / ws_name
-            ws_dir.parent.mkdir(parents=True, exist_ok=True)
-            jj_workspace_add(ws_dir)
-            prompt = build_feature_prompt(fdir, ws_dir)
-            results.append((fdir, ws_dir, prompt))
-            progress.advance(task)
+            for agent in AGENTS:
+                ws_name = make_workspace_name(fdir, agent["suffix"])
+                ws_dir = WS_ROOT / ws_name
+                ws_dir.parent.mkdir(parents=True, exist_ok=True)
+                jj_workspace_add(ws_dir)
+                prompt = build_feature_prompt(fdir, ws_dir, agent["prompt_template"])
+                results.append((ws_dir, prompt))
+                progress.advance(task)
     return results
 
 def invoke_jules_in(dir_and_prompt: Tuple[Path, str]) -> Tuple[Path, int, str, str]:
     """指定ワークスペース（作業コピー）で jules セッションを 1 件作る。"""
     d, prompt = dir_and_prompt
     code, out, err = run(["jj", "jules", "remote", "new", "--repo", ".", "--session", prompt], cwd=d)
-    # jules コマンドが見つからないエラーの場合、より詳細なメッセージを追加
-    if code != 0 and "jules" in err.lower() and ("not found" in err.lower() or "見つかりません" in err.lower()):
-        err = (
-            f"{err}\n"
-            f"※ jules コマンドが PATH から見つかりません。\n"
-            f"  - npm install -g @google/jules でインストール済みか確認してください\n"
-            f"  - 新しいターミナルを開いてから再度実行してください\n"
-            f"  - または、環境変数 PATH に npm のグローバルパッケージパスが含まれているか確認してください"
-        )
     return d, code, out, err
 
 def dispatch_all(pairs: Iterable[Tuple[Path, str]]) -> None:
@@ -301,15 +334,7 @@ def dispatch_all(pairs: Iterable[Tuple[Path, str]]) -> None:
             futs = [ex.submit(invoke_jules_in, p) for p in pairs_list]
             for fut in cf.as_completed(futs):
                 d, code, out, err = fut.result()
-                if code == 0 and out:
-                    msg = out.splitlines()[-1] if out else "success"
-                else:
-                    # エラーメッセージを短くして、重要な情報だけを表示
-                    error_lines = (err or out or "error").splitlines()
-                    msg = error_lines[0] if error_lines else "error"
-                    # 長いメッセージは最初の2行だけ
-                    if len(error_lines) > 1 and len(msg) > 100:
-                        msg = f"{msg[:97]}..."
+                msg = (out or "").splitlines()[-1] if (code == 0 and out) else (err or out or "error")
                 rows.append((str(d), ("submitted: " if code == 0 else "error: ") + msg))
                 progress.advance(task)
 
@@ -334,8 +359,9 @@ def build_dynamic_parents_from_feature_dirs(feature_dirs: List[Path]) -> List[st
     """機能ワークスペースから親コミット参照（workspace@）を動的に作る。"""
     parents: List[str] = []
     for fdir in feature_dirs:
-        ws_name = make_workspace_name(fdir)
-        parents.append(str(WS_ROOT / ws_name) + "@")
+        for agent in AGENTS:
+            ws_name = make_workspace_name(fdir, agent["suffix"])
+            parents.append(str(WS_ROOT / ws_name) + "@")
     return parents
 
 def merge_all_results(feature_dirs: List[Path]) -> None:
@@ -388,11 +414,10 @@ def main() -> None:
     console.print(table)
 
     # WS 作成
-    triplets = create_feature_workspaces(feature_dirs)  # (feature_dir, ws_dir, prompt)
-    console.log(f"{len(triplets)} 個のワークスペースを用意しました")
+    pairs = create_feature_workspaces(feature_dirs)  # (ws_dir, prompt)
+    console.log(f"{len(pairs)} 個のワークスペースを用意しました")
 
     # 並列送信
-    pairs = [(ws_dir, prompt) for (_f, ws_dir, prompt) in triplets]
     dispatch_all(pairs)
 
     # 一覧表示（pull は必要に応じて）

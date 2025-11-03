@@ -100,58 +100,29 @@ def check_cmd(cmd: str) -> None:
     Raises:
         RuntimeError: コマンドが見つからない場合。
     """
-    # Windows環境では、.cmd/.bat 拡張子も考慮して検索
-    cmd_path = shutil.which(cmd)
-    if cmd_path is None:
-        # Windowsの場合、.cmd 拡張子を付けて再試行
-        if sys.platform == "win32":
-            cmd_path = shutil.which(f"{cmd}.cmd") or shutil.which(f"{cmd}.bat")
-        if cmd_path is None:
-            raise RuntimeError(
-                f"コマンドが見つかりません: {cmd}\n"
-                f"インストール方法: npm install -g @google/jules\n"
-                f"または、PATH環境変数に {cmd} が含まれていることを確認してください。"
-            )
-    
-    # 実際にコマンドが実行可能か確認（--version で試す）
-    if cmd == "jules":
-        code, _, err = run([cmd, "--version"], timeout=5.0)
-        if code != 0:
-            # Windows環境でよくあるエラーパターンをチェック
-            error_lower = err.lower()
-            if any(keyword in error_lower for keyword in ["not found", "見つかりません", "could not find", "program not found"]):
-                raise RuntimeError(
-                    f"コマンド '{cmd}' が見つかりましたが実行できませんでした。\n"
-                    f"詳細: {err}\n"
-                    f"インストール方法: npm install -g @google/jules\n"
-                    f"インストール後、新しいターミナルを開いて再度実行してください。"
-                )
+    if shutil.which(cmd) is None:
+        raise RuntimeError(f"コマンドが見つかりません: {cmd}")
 
-def run(cmd: List[str], cwd: Path | None = None, timeout: float | None = None) -> Tuple[int, str, str]:
+def run(cmd: List[str], cwd: Path | None = None) -> Tuple[int, str, str]:
     """サブプロセスを実行し、終了コード・標準出力・標準エラーを返す。
 
     Args:
         cmd (List[str]): 実行コマンド（引数を含む）。
         cwd (Path | None): 実行ディレクトリ。
-        timeout (float | None): タイムアウト秒数。
 
     Returns:
         Tuple[int, str, str]: (returncode, stdout_stripped, stderr_stripped)
     """
-    try:
-        proc = subprocess.run(
-            cmd,
-            cwd=str(cwd) if cwd else None,
-            text=True,
-            encoding="utf-8",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-            timeout=timeout,
-        )
-        return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
-    except subprocess.TimeoutExpired as e:
-        return -1, "", f"コマンドがタイムアウトしました: {e}"
+    proc = subprocess.run(
+        cmd,
+        cwd=str(cwd) if cwd else None,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
 
 # ---------- jj まわり ----------
 
@@ -161,33 +132,12 @@ def ensure_alias_for_jules() -> None:
     Notes:
         `aliases.jules = ["util","exec","--","jules"]` を user スコープに設定。
         これで `jj jules ...` が使えるようになる。
-        Windows環境では、jules のフルパスを使用することを試みる。
     """
-    # jules コマンドのパスを取得
-    jules_cmd = "jules"
-    jules_path = shutil.which("jules")
-    if jules_path:
-        jules_cmd = jules_path
-    elif sys.platform == "win32":
-        # Windows環境では .cmd/.bat 拡張子も試す
-        jules_cmd_alt = shutil.which("jules.cmd") or shutil.which("jules.bat")
-        if jules_cmd_alt:
-            jules_cmd = jules_cmd_alt
-    
-    # jules が見つからない場合でも、デフォルトで "jules" を使用（後でエラーになる）
-    alias_value = f'["util","exec","--","{jules_cmd}"]'
-    
     code, out, err = run(
-        ["jj", "config", "set", "--user", "aliases.jules", alias_value]
+        ["jj", "config", "set", "--user", "aliases.jules", '["util","exec","--","jules"]']
     )
     if code != 0:
         raise RuntimeError(f"jj の別名設定に失敗しました: {err or out}")
-    
-    # 設定した jules コマンドが実際に動作するか確認
-    if jules_path:
-        console.log(f"jules コマンドのパス: {jules_cmd}")
-    else:
-        console.log(f"警告: jules コマンドのパスを取得できませんでした。デフォルトの 'jules' を使用します。")
 
 def ensure_repo_context() -> None:
     """実行ディレクトリが jj リポジトリかざっくり確認する。"""
@@ -280,15 +230,6 @@ def invoke_jules_in(dir_and_prompt: Tuple[Path, str]) -> Tuple[Path, int, str, s
     """指定ワークスペース（作業コピー）で jules セッションを 1 件作る。"""
     d, prompt = dir_and_prompt
     code, out, err = run(["jj", "jules", "remote", "new", "--repo", ".", "--session", prompt], cwd=d)
-    # jules コマンドが見つからないエラーの場合、より詳細なメッセージを追加
-    if code != 0 and "jules" in err.lower() and ("not found" in err.lower() or "見つかりません" in err.lower()):
-        err = (
-            f"{err}\n"
-            f"※ jules コマンドが PATH から見つかりません。\n"
-            f"  - npm install -g @google/jules でインストール済みか確認してください\n"
-            f"  - 新しいターミナルを開いてから再度実行してください\n"
-            f"  - または、環境変数 PATH に npm のグローバルパッケージパスが含まれているか確認してください"
-        )
     return d, code, out, err
 
 def dispatch_all(pairs: Iterable[Tuple[Path, str]]) -> None:
@@ -301,15 +242,7 @@ def dispatch_all(pairs: Iterable[Tuple[Path, str]]) -> None:
             futs = [ex.submit(invoke_jules_in, p) for p in pairs_list]
             for fut in cf.as_completed(futs):
                 d, code, out, err = fut.result()
-                if code == 0 and out:
-                    msg = out.splitlines()[-1] if out else "success"
-                else:
-                    # エラーメッセージを短くして、重要な情報だけを表示
-                    error_lines = (err or out or "error").splitlines()
-                    msg = error_lines[0] if error_lines else "error"
-                    # 長いメッセージは最初の2行だけ
-                    if len(error_lines) > 1 and len(msg) > 100:
-                        msg = f"{msg[:97]}..."
+                msg = (out or "").splitlines()[-1] if (code == 0 and out) else (err or out or "error")
                 rows.append((str(d), ("submitted: " if code == 0 else "error: ") + msg))
                 progress.advance(task)
 

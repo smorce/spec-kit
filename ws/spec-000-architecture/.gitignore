@@ -187,4 +187,3 @@ vertex-ai-gemini.json
 .cursor/mcp.json
 .codex/auth.json
 .codex/config.toml
-rollout-*.jsonl
