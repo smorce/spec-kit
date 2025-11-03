@@ -8,8 +8,8 @@
 ### PowerShell ではなく WSL で作業しないとちゃんとプロンプトを読み込んでくれないので、ターミナルでは WSL を起動する。
 
 流れ:
-wsl でCodexCLIを起動する。
-```これは毎回最初にやる
+wsl で CodexCLI を起動する。
+```これは毎回最初にやる。/new したときも必要に応じて読み込む。
 プロジェクト憲章（.specify/memory/constitution.md）を読み込んでください。
 ```
 ↓
@@ -19,8 +19,10 @@ wsl でCodexCLIを起動する。
 ↓
 /prompts:speckit.plan {planの指示書はこちら.mdの内容を貼る}
 ↓
-/prompts:speckit.checklist {speckit.checklist1 の指示書はこちら.mdの内容を貼る}  ← 今ココ。次はこれをやる。
+/prompts:speckit.checklist {speckit.checklist1 の指示書はこちら.mdの内容を貼る}
+/new
 /prompts:speckit.checklist {speckit.checklist2 の指示書はこちら.mdの内容を貼る}
+/new
 /prompts:speckit.checklist {speckit.checklist3 の指示書はこちら.mdの内容を貼る}
 
 
