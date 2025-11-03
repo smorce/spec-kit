@@ -15,3 +15,4 @@ node_modules/
 .next/
 .codex/auth.json
 .codex/config.toml
+rollout-*.jsonl

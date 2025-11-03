@@ -1,1 +1,0 @@
-https://github.com/sito-sikino/avatar-ui-core/blob/main/README.ja.md

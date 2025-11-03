@@ -1,1 +1,0 @@
-﻿私が今まで使っていたプロンプトが AGENTS.md です。こちらを参照して .specify/memory/constitution.md を更新してください。constitution.mdは AI エージェントが仕様、計画、実装の各フェーズで参照するプロジェクトの基本ガイドラインを含む統治原則になります。 やってほしいことは AGENTS.md の内容を理解した上で 仕様駆動TDDによるエンタープライズ級マイクロサービス開発手法を .specify/memory/constitution.md のフォーマットを崩さずに反映することです。
