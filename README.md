@@ -9,7 +9,7 @@
 
 流れ:
 wsl で CodexCLI を起動する。
-```これは毎回最初にやる。/new したときも必要に応じて読み込む。
+```これは毎回最初にやる。/new したときも必要に応じて読み込む。====
 プロジェクト憲章（.specify/memory/constitution.md）を読み込んでください。
 ```
 ↓
@@ -118,11 +118,11 @@ specify check
 まずは CodexCLI を立ち上げて以下を実行する。
 codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 
-### エージェント内で順に実行
+### エージェント内で順に実行(必要に応じて /new する)
 /speckit.constitution  品質・テスト・UX一貫性・性能に関する原則を作って
 /speckit.specify       何を作るか（WHAT/WHY）を定義。「ビジネスドメインとユースケース」を書く。この段階ではスタックや方式は書かないのが公式推奨
 /speckit.clarify       曖昧さを解消（推奨オプション）
-/speckit.plan          技術計画（スタック/アーキテクチャ）。マイクロサービス方針と生成してほしいドキュメントを明確に書く。specs/<feature>/plan.md / data-model.md / contracts/ ... など複数の技術文書を出すので、ここにArchitecture.md / Design.md / OpenAPI.yaml を追加で作る旨を盛り込む。SpecKitに合わせるなら各サービスを**“機能（feature）”**として扱うと運用が楽。
+/speckit.plan          技術計画（スタック/アーキテクチャ）。マイクロサービス方針と生成してほしいドキュメントを明確に書く。
 /speckit.checklist     設計の妥当性チェック。チェックリスト分 実行。
 /speckit.tasks         実行タスクリスト生成。実装タスクをサービス単位に分割する。
 /speckit.analyze       成果物間の整合性チェック（推奨オプション）
