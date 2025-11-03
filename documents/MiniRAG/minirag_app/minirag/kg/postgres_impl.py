@@ -16,12 +16,19 @@ def _jsonb(obj: Any):
     * If *obj* is ``None`` → return '{}' (empty JSON object string)
     * If it is already a ``str`` →そのまま返す（既に JSON シリアライズ済みとみなす）
     * それ以外は ``json.dumps`` で 1 回だけ文字列化する
+    * ``datetime`` オブジェクトは ISO 8601 文字列に変換する
     """
     if obj is None:
         return "{}"
     if isinstance(obj, str):
         return obj
-    return json.dumps(obj)
+    
+    def _default_serializer(value):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+    
+    return json.dumps(obj, default=_default_serializer)
 
 
 import pipmaster as pm
@@ -48,7 +55,7 @@ from ..base import (
     DocProcessingStatus,
     BaseGraphStorage,
 )
-from datetime import datetime
+from datetime import datetime, timezone
 
 if sys.platform.startswith("win"):
     import asyncio.windows_events
@@ -580,31 +587,58 @@ class PGVectorStorage(BaseVectorStorage):
                         print(f"🔧 Flexible metadata filter: {key} = {str(value)} (handles both object and string types)")
         
         if start_time:
-            # 文字列なら datetime にパース
-            if isinstance(start_time, str):
+            # datetimeオブジェクトまたは文字列を処理
+            if isinstance(start_time, datetime):
+                # タイムゾーン付きの場合はUTCに正規化
+                if start_time.tzinfo is not None:
+                    start_time = start_time.astimezone(timezone.utc)
+                # naiveなdatetimeとして扱う（PostgreSQLのTIMESTAMP WITHOUT TIME ZONEに対応）
+                start_time = start_time.replace(tzinfo=None)
+            elif isinstance(start_time, str):
+                # ISO形式の文字列をdatetimeオブジェクトにパース
                 try:
-                    start_time = datetime.fromisoformat(start_time)
-                except ValueError:
-                    # ISO形式以外も許容: 空白区切りなど
-                    try:
-                        start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-                    except ValueError:
-                        # パース失敗時はそのまま渡す (asyncpg が型変換を試みる)
-                        pass
-            where_clauses.append(f"updated_at >= ${param_idx}")
+                    start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                    # タイムゾーン付きの場合はUTCに正規化
+                    if start_time.tzinfo is not None:
+                        start_time = start_time.astimezone(timezone.utc)
+                    # naiveなdatetimeに変換
+                    start_time = start_time.replace(tzinfo=None)
+                except (ValueError, AttributeError):
+                    # パースできない場合はエラーを発生させる
+                    raise ValueError(f"Invalid datetime string format: {start_time}")
+            else:
+                # その他の型はエラー
+                raise TypeError(f"start_time must be datetime or ISO format string, got {type(start_time)}")
+            
+            where_clauses.append(f"updated_at >= ${param_idx}::timestamp")
             params.append(start_time)
             param_idx += 1
 
         if end_time:
-            if isinstance(end_time, str):
+            # datetimeオブジェクトまたは文字列を処理
+            if isinstance(end_time, datetime):
+                # タイムゾーン付きの場合はUTCに正規化
+                if end_time.tzinfo is not None:
+                    end_time = end_time.astimezone(timezone.utc)
+                # naiveなdatetimeとして扱う（PostgreSQLのTIMESTAMP WITHOUT TIME ZONEに対応）
+                end_time = end_time.replace(tzinfo=None)
+            elif isinstance(end_time, str):
+                # ISO形式の文字列をdatetimeオブジェクトにパース
                 try:
-                    end_time = datetime.fromisoformat(end_time)
-                except ValueError:
-                    try:
-                        end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-                    except ValueError:
-                        pass
-            where_clauses.append(f"updated_at <= ${param_idx}")
+                    end_time = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                    # タイムゾーン付きの場合はUTCに正規化
+                    if end_time.tzinfo is not None:
+                        end_time = end_time.astimezone(timezone.utc)
+                    # naiveなdatetimeに変換
+                    end_time = end_time.replace(tzinfo=None)
+                except (ValueError, AttributeError):
+                    # パースできない場合はエラーを発生させる
+                    raise ValueError(f"Invalid datetime string format: {end_time}")
+            else:
+                # その他の型はエラー
+                raise TypeError(f"end_time must be datetime or ISO format string, got {type(end_time)}")
+            
+            where_clauses.append(f"updated_at <= ${param_idx}::timestamp")
             params.append(end_time)
             param_idx += 1
 
@@ -676,11 +710,42 @@ class PGVectorStorage(BaseVectorStorage):
                     if debug:
                         print("🔎 Raw metadata and distance values:")
                         for dr in distance_results:
-                            print(f"   - ID: {dr.get('id', '')[:16]}...")
-                            print(f"     Raw metadata: {dr.get('metadata')}")
-                            print(f"     Extracted category: {dr.get('category')}")
-                            print(f"     Distance: {dr.get('distance')}")
-                            print(f"     Metadata type: {type(dr.get('metadata'))}")
+                            metadata_raw = dr.get('metadata')
+                            # メタデータが文字列の場合はJSONとしてパースして表示
+                            # これにより、実際にメタデータが登録されている場合は正しく表示される
+                            if isinstance(metadata_raw, str):
+                                try:
+                                    metadata_parsed = json.loads(metadata_raw)
+                                    if isinstance(metadata_parsed, dict) and metadata_parsed:
+                                        print(f"   - ID: {dr.get('id', '')[:16]}...")
+                                        print(f"     Raw metadata: {metadata_parsed}")
+                                        print(f"     Extracted category: {dr.get('category')}")
+                                        print(f"     Distance: {dr.get('distance')}")
+                                    else:
+                                        # 空の辞書の場合は表示をスキップ（元々メタデータが登録されていない場合）
+                                        print(f"   - ID: {dr.get('id', '')[:16]}...")
+                                        print(f"     Raw metadata: {{}} (no metadata registered)")
+                                        print(f"     Distance: {dr.get('distance')}")
+                                except json.JSONDecodeError:
+                                    print(f"   - ID: {dr.get('id', '')[:16]}...")
+                                    print(f"     Raw metadata: {metadata_raw} (parse error)")
+                                    print(f"     Distance: {dr.get('distance')}")
+                            elif isinstance(metadata_raw, dict):
+                                if metadata_raw:
+                                    print(f"   - ID: {dr.get('id', '')[:16]}...")
+                                    print(f"     Raw metadata: {metadata_raw}")
+                                    print(f"     Extracted category: {dr.get('category')}")
+                                    print(f"     Distance: {dr.get('distance')}")
+                                else:
+                                    # 空の辞書の場合は表示をスキップ（元々メタデータが登録されていない場合）
+                                    print(f"   - ID: {dr.get('id', '')[:16]}...")
+                                    print(f"     Raw metadata: {{}} (no metadata registered)")
+                                    print(f"     Distance: {dr.get('distance')}")
+                            else:
+                                print(f"   - ID: {dr.get('id', '')[:16]}...")
+                                print(f"     Raw metadata: {metadata_raw}")
+                                print(f"     Metadata type: {type(metadata_raw)}")
+                                print(f"     Distance: {dr.get('distance')}")
             
             return results
         except Exception as e:
