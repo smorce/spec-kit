@@ -1,7 +1,4 @@
 # to do
-- 2025/11/03
-  - ローカルで MiniRAG_on_postgres をテスト中
-  - これが動かないと Spec kit でどうやって指示すれば良いか分からないので、動かせるかどうか確認して、サンプルコードにまとめて Spec kit が理解できるようにドキュメント化する
 
 - これでウォーターフォール型バイブコーディングが実践できる
   - S&P TOP10 効率的フロンティア
@@ -12,8 +9,10 @@
 
 流れ:
 wsl で CodexCLI を起動する。
-```これは毎回最初にやる。/new したときも必要に応じて読み込む。====
+```001-memorium-mdブランチ ではこれは毎回最初にやる。/new したときも必要に応じて読み込む。====
 プロジェクト憲章（.specify/memory/constitution.md）を読み込んでください。
+
+データインサートと検索は MiniRAG でやりますが、MiniRAG のサンプルコードは「documents/MiniRAG/minirag_on_postgres のサンプルコード.py」を確認してください。MiniRAGは「dockerfile: Dockerfile.postgres」と「dockerfile: Dockerfile.minirag_on_postgre」の2つのコンテナで動かすため、実行したい場合は私に相談してください。
 ```
 ↓
 /prompts:speckit.specify Memorium.md を確認してください。
@@ -149,6 +148,14 @@ https://qiita.com/chomado/items/764e67e104843a22bcde
 - 常に検証・テスト・レビューを実施​
   - /speckit.checklist
   - /speckit.analyze
+
+# done
+
+- 2025/11/03
+  - ローカルで MiniRAG_on_postgres をテストした。とりあえずそれっぽく動いているので、一旦OK。
+  - これが動かないと Spec kit でどうやって指示すれば良いか分からないので、動かせるかどうか確認して、サンプルコードにまとめて Spec kit が理解できるようにドキュメント化する
+    - "documents/MiniRAG/minirag_on_postgres のサンプルコード.py" がサンプルコード。これでデータインサートと検索(メタデータフィルター付き)をすれば良い。
+
 
 
 ---
