@@ -34,6 +34,41 @@ from .base import (
 from .prompt import GRAPH_FIELD_SEP, PROMPTS
 
 
+def _parse_metadata_dict(raw_metadata):
+    if isinstance(raw_metadata, dict):
+        return raw_metadata
+    if isinstance(raw_metadata, str):
+        try:
+            parsed = json.loads(raw_metadata)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+    return {}
+
+
+def _extract_category_from_metadata(raw_metadata):
+    meta = _parse_metadata_dict(raw_metadata)
+    return meta.get("category")
+
+
+def _debug_log_filter_samples(context_label: str, phase_label: str, units: list, metadata_filter: dict):
+    try:
+        max_samples = 5
+        samples = []
+        for u in (units or [])[:max_samples]:
+            cid = u.get("id", "")
+            cat = _extract_category_from_metadata(u.get("metadata"))
+            dist = u.get("_distance", "N/A")
+            samples.append(f"- id={str(cid)[:16]}..., category={cat}, distance={dist}")
+        print(f"[{context_label}] Metadata filter: {metadata_filter}")
+        print(f"[{context_label}] {phase_label}: {len(units or [])} candidates")
+        if samples:
+            print(f"[{context_label}] {phase_label} samples:\n  " + "\n  ".join(samples))
+    except Exception as e:
+        print(f"[{context_label}] Debug logging failed: {e}")
+
+
 def chunking_by_token_size(
     content: str, overlap_token_size=128, max_token_size=1024, tiktoken_model="gpt-4o"
 ):
@@ -356,10 +391,13 @@ async def extract_entities(
         await entity_vdb.upsert(data_for_vdb)
 
     if entity_name_vdb is not None:
+        # 🆕 メタデータを付与: source_id の最初のチャンクから取得
+        # これにより、minirag_query での metadata_filter が機能し、検索性能にも影響する
         data_for_vdb = {
             compute_mdhash_id(dp["entity_name"], prefix="Ename-"): {
                 "content": dp["entity_name"],
                 "entity_name": dp["entity_name"],
+                "metadata": chunks.get(dp["source_id"].split(GRAPH_FIELD_SEP)[0], {}).get("metadata", {}),
             }
             for dp in all_entities_data
         }
@@ -508,6 +546,7 @@ async def _build_local_query_context(
     if query_param.metadata_filter:
         # フィルタ適用前の件数を記録
         _before_cnt = len(use_text_units)
+        _debug_log_filter_samples("Local", "before", use_text_units, query_param.metadata_filter)
         filtered_text_units = []
         for unit in use_text_units:
             chunk_metadata_raw = unit.get("metadata")
@@ -531,6 +570,8 @@ async def _build_local_query_context(
             if is_match:
                 filtered_text_units.append(unit)
         use_text_units = filtered_text_units
+        print(f"[Local] filter reduced candidates: before={_before_cnt} -> after={len(use_text_units)}")
+        _debug_log_filter_samples("Local", "after", use_text_units, query_param.metadata_filter)
 
     # フィルタリング後のチャンクに基づいてエンティティの情報を再構築する
     filtered_chunk_content_map = {unit["id"]: unit["content"] for unit in use_text_units}
@@ -691,6 +732,10 @@ async def _find_most_related_text_unit_from_entities(
             unit_time = unit.get("updated_at")
             if not unit_time:
                 continue
+            
+            # JSONB から読み戻された場合、datetime は文字列になっている可能性がある
+            if isinstance(unit_time, str):
+                unit_time = datetime.fromisoformat(unit_time.replace('Z', '+00:00'))
 
             if start_time_dt and unit_time < start_time_dt:
                 continue
@@ -878,6 +923,7 @@ async def _build_global_query_context(
     # 取得したチャンクに対してメタデータフィルタを適用
     if query_param.metadata_filter:
         _before_cnt = len(use_text_units)
+        _debug_log_filter_samples("Global", "before", use_text_units, query_param.metadata_filter)
         filtered_text_units = []
         for unit in use_text_units:
             chunk_metadata_raw = unit.get("metadata")
@@ -901,6 +947,8 @@ async def _build_global_query_context(
             if is_match:
                 filtered_text_units.append(unit)
         use_text_units = filtered_text_units
+        print(f"[Global] filter reduced candidates: before={_before_cnt} -> after={len(use_text_units)}")
+        _debug_log_filter_samples("Global", "after", use_text_units, query_param.metadata_filter)
 
     # フィルタリングされたチャンクに基づいて、エンティティとリレーションシップの情報を再構築する
     filtered_chunk_content_map = {unit["id"]: unit["content"] for unit in use_text_units}
@@ -1062,6 +1110,10 @@ async def _find_related_text_unit_from_relationships(
             if not unit_time:
                 continue
             
+            # JSONB から読み戻された場合、datetime は文字列になっている可能性がある
+            if isinstance(unit_time, str):
+                unit_time = datetime.fromisoformat(unit_time.replace('Z', '+00:00'))
+            
             if start_time_dt and unit_time < start_time_dt:
                 continue
             if end_time_dt and unit_time > end_time_dt:
@@ -1148,6 +1200,9 @@ async def hybrid_query(
 
     context, _ = combine_contexts(high_level_context, low_level_context)
     # 重複を防ぐため、setを使用してユニークな要素のみを結合
+    # 注意: これは文字列ベースの重複排除のため、完全に同じコンテンツのソースは1つにまとめられる
+    # フィールド別チャンクと統合チャンクは異なるIDで保存されるが、同じコンテンツの場合、
+    # 検索結果では文字列が同じため、この重複排除により1つにまとめられる
     source = list(set(ll_source + hl_source))
 
     if query_param.only_need_context:
