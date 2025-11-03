@@ -1,7 +1,17 @@
 # to do
 
 - 2025/11/03
-  - task までできたので実装する(/speckit.analyze の指摘は受けたけど一旦実装に進む。指摘内容は これは見ないでください。アウトプットの内容.txt に書いた)
+  - task までできたので以下の手順で実装する(/speckit.analyze の指摘は受けたけど一旦実装に進む。指摘内容は これは見ないでください。アウトプットの内容.txt に書いた)
+  - jj git init --colocate
+    - これで .jj が作成される
+  - jj bookmark track 001-memorium-md@origin
+  - jj bookmark set 001-memorium-md
+  - Cursor に「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行してもらう
+    - 多分、error: node:events:486 というエラーが出ると思うので、分析しててもらう。多分、片方の WS の送信ができていない。
+    - クラウドの Jules には あなたは担当機能の実装エージェントです。 という最初の1行しか送信されていないし、WS も2つあるはずなのに 片方しか送信されていない。
+  - もとに戻したいときは「.git」「.jj」「ws」の3つを削除する。次に「C:\Users\kbpsh\OneDrive\development\2025_11_03_Speckit_Backups\spec-kit」から「.git」だけ持ってくる。
+
+
 
 - これでウォーターフォール型バイブコーディングが実践できる
   - S&P TOP10 効率的フロンティア
