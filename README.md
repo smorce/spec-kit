@@ -8,6 +8,7 @@
 ### PowerShell ではなく WSL で作業しないとちゃんとプロンプトを読み込んでくれないので、ターミナルでは WSL を起動する。
 
 流れ:
+wsl でCodexCLIを起動する。
 ```これは毎回最初にやる
 プロジェクト憲章（.specify/memory/constitution.md）を読み込んでください。
 ```
