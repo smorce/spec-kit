@@ -132,15 +132,26 @@ codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 /speckit.tasks         実行タスクリスト生成。実装タスクをサービス単位に分割する。
 /speckit.analyze       成果物間の整合性チェック（推奨オプション）
 ※ /speckit.implement     タスク実行・TDDで実装（タスク順にローカルCLIを叩きながら構築）
-/speckit.implement は使わずに WSL ではなくPowerShell で「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行してこれで実装する。このスクリプトは「JJ + Jules」。
+/speckit.implement は使わずに orchestrate_jj_jules_from_specs.py を使う。詳細は下記。
 /speckit.codeReview.md
-
-
 
 ※任意ツール:
 /speckit.clarify（不足要件の質疑応答）
 /speckit.analyze（成果物間の整合性チェック）
 /speckit.checklist（要件の網羅・明確性の検査。品質チェックリスト生成）
+
+
+## orchestrate_jj_jules_from_specs.py
+- WSL ではなく PowerShell で「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行して実装する
+- このスクリプトは「JJ + Jules」。
+- このスクリプトを動かす前に git push して、プロジェクトごとどこかにバックアップを取っておく(jj を使うと Git が壊れることがあるらしい)
+- 次に以下を実行する。001-memorium-md はブランチ名。
+  - jj git init --colocate
+  - jj status
+  - git status
+  - jj bookmark track 001-memorium-md@origin
+  - jj bookmark set 001-memorium-md
+  - jj git push
 
 
 # AIコーディングの心得
