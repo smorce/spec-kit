@@ -91,6 +91,31 @@ ARGS = parse_args()
 
 # ---------- ユーティリティ ----------
 
+def get_powershell_path() -> str | None:
+    """PowerShellからPATH環境変数を取得する（Windows環境のみ）。
+
+    Returns:
+        str | None: PATH環境変数の値、取得できない場合はNone。
+    """
+    if sys.platform != "win32":
+        return None
+    
+    try:
+        proc = subprocess.run(
+            ["powershell", "-Command", "$env:PATH"],
+            text=True,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=5.0,
+        )
+        if proc.returncode == 0:
+            return proc.stdout.strip()
+    except Exception:
+        pass
+    
+    return None
+
 def check_cmd(cmd: str) -> None:
     """外部コマンドが PATH から実行できるか確認する。
 
@@ -100,32 +125,29 @@ def check_cmd(cmd: str) -> None:
     Raises:
         RuntimeError: コマンドが見つからない場合。
     """
-    # Windows環境では、.cmd/.bat 拡張子も考慮して検索
-    cmd_path = shutil.which(cmd)
-    if cmd_path is None:
-        # Windowsの場合、.cmd 拡張子を付けて再試行
-        if sys.platform == "win32":
-            cmd_path = shutil.which(f"{cmd}.cmd") or shutil.which(f"{cmd}.bat")
-        if cmd_path is None:
-            raise RuntimeError(
-                f"コマンドが見つかりません: {cmd}\n"
-                f"インストール方法: npm install -g @google/jules\n"
-                f"または、PATH環境変数に {cmd} が含まれていることを確認してください。"
-            )
+    # まず実際にコマンドを実行してみて確認（最も確実な方法）
+    # Windows環境では、cmd.exe経由で実行することで、.cmd/.bat/.ps1が自動的に解決される
+    test_cmd = [cmd, "--help"] if cmd != "jj" else [cmd, "--version"]
     
-    # 実際にコマンドが実行可能か確認（--version で試す）
-    if cmd == "jules":
-        code, _, err = run([cmd, "--version"], timeout=5.0)
-        if code != 0:
-            # Windows環境でよくあるエラーパターンをチェック
-            error_lower = err.lower()
-            if any(keyword in error_lower for keyword in ["not found", "見つかりません", "could not find", "program not found"]):
-                raise RuntimeError(
-                    f"コマンド '{cmd}' が見つかりましたが実行できませんでした。\n"
-                    f"詳細: {err}\n"
-                    f"インストール方法: npm install -g @google/jules\n"
-                    f"インストール後、新しいターミナルを開いて再度実行してください。"
-                )
+    code, out, err = run(test_cmd, timeout=5.0)
+    
+    # FileNotFoundErrorが発生した場合（run関数でキャッチされているはず）
+    if code == -1 and ("見つかりません" in err or "not found" in err.lower() or "指定されたファイル" in err):
+        # shutil.whichで再確認（デバッグ情報用）
+        cmd_path = shutil.which(cmd)
+        if cmd_path is None and sys.platform == "win32":
+            cmd_path = shutil.which(f"{cmd}.cmd") or shutil.which(f"{cmd}.bat")
+        
+        raise RuntimeError(
+            f"コマンドが見つかりません: {cmd}\n"
+            f"{'見つかったパス: ' + cmd_path if cmd_path else 'PATH環境変数を確認してください。'}\n"
+            f"インストール方法: npm install -g @google/jules\n"
+            f"または、PATH環境変数に {cmd} が含まれていることを確認してください。"
+        )
+    
+    # コマンドが見つかった（エラーが "not found" 系でない）
+    # デバッグ用: cmd_path = shutil.which(cmd) or (f"{cmd}.cmd" if sys.platform == "win32" else cmd)
+    # 成功時はログを出力しない（エラー時のみ例外を投げる）
 
 def run(cmd: List[str], cwd: Path | None = None, timeout: float | None = None) -> Tuple[int, str, str]:
     """サブプロセスを実行し、終了コード・標準出力・標準エラーを返す。
@@ -139,8 +161,38 @@ def run(cmd: List[str], cwd: Path | None = None, timeout: float | None = None) -
         Tuple[int, str, str]: (returncode, stdout_stripped, stderr_stripped)
     """
     try:
+        # Windows環境では、.cmd/.bat ファイルを実行するために shell=True が必要な場合がある
+        # ただし、セキュリティ上の理由から、jjコマンドなどは shell=False のまま
+        use_shell = False
+        actual_cmd = cmd
+        if sys.platform == "win32" and len(cmd) > 0:
+            cmd_name = cmd[0].lower()
+            # jules など、.cmd/.bat/.ps1 で提供されるコマンドの場合
+            if cmd_name in ["jules"]:
+                # Windowsでは、.cmd/.bat は shell=True でないと見つからない場合がある
+                # shell=True を使う場合は、コマンドを文字列として結合
+                use_shell = True
+                # 引数を適切にエスケープして文字列に変換
+                import shlex
+                actual_cmd = " ".join(shlex.quote(str(arg)) for arg in cmd)
+        
+        # Windows環境でjj util exec経由でjulesを実行する場合、PATH環境変数を明示的に設定
+        env = None
+        if sys.platform == "win32" and len(cmd) > 0 and cmd[0] == "jj" and "jules" in cmd:
+            # 現在の環境変数をコピー
+            env = os.environ.copy()
+            # npm のグローバルパッケージパスを確認して追加
+            npm_paths = [
+                os.path.join(os.environ.get("APPDATA", ""), "npm"),
+                os.path.join(os.environ.get("ProgramFiles", ""), "nodejs"),
+            ]
+            current_path = env.get("PATH", "")
+            for npm_path in npm_paths:
+                if npm_path and os.path.exists(npm_path) and npm_path not in current_path:
+                    env["PATH"] = f"{npm_path};{env.get('PATH', '')}"
+        
         proc = subprocess.run(
-            cmd,
+            actual_cmd if use_shell else cmd,
             cwd=str(cwd) if cwd else None,
             text=True,
             encoding="utf-8",
@@ -148,12 +200,56 @@ def run(cmd: List[str], cwd: Path | None = None, timeout: float | None = None) -
             stderr=subprocess.PIPE,
             check=False,
             timeout=timeout,
+            shell=use_shell,
+            env=env,
         )
         return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
+    except FileNotFoundError as e:
+        # コマンドが見つからない場合
+        cmd_name = cmd[0] if cmd else "unknown"
+        return -1, "", f"コマンド '{cmd_name}' が見つかりませんでした。PATH環境変数を確認してください。詳細: {e}"
     except subprocess.TimeoutExpired as e:
         return -1, "", f"コマンドがタイムアウトしました: {e}"
 
 # ---------- jj まわり ----------
+
+def find_jules_path() -> str | None:
+    """jules コマンドのフルパスを探す。
+    
+    Returns:
+        str | None: jules コマンドのフルパス、見つからない場合は None。
+    """
+    # まず通常の方法で探す
+    jules_path = shutil.which("jules")
+    if jules_path:
+        return jules_path
+    
+    # Windows環境では、.cmd/.bat/.CMD/.BAT 拡張子も試す
+    if sys.platform == "win32":
+        # 小文字の拡張子
+        jules_path = shutil.which("jules.cmd") or shutil.which("jules.bat")
+        if jules_path:
+            return jules_path
+        
+        # npm のグローバルパッケージパスを直接確認（大文字小文字を考慮）
+        npm_dirs = [
+            os.environ.get("APPDATA", ""),
+            os.environ.get("LOCALAPPDATA", ""),
+            os.path.join(os.environ.get("ProgramFiles", ""), "nodejs"),
+        ]
+        for npm_dir in npm_dirs:
+            if not npm_dir or not os.path.exists(npm_dir):
+                continue
+            npm_path = os.path.join(npm_dir, "npm")
+            if not os.path.exists(npm_path):
+                continue
+            # 大文字小文字を区別せずにファイルを探す
+            for ext in ["cmd", "CMD", "bat", "BAT"]:
+                jules_file = os.path.join(npm_path, f"jules.{ext}")
+                if os.path.exists(jules_file):
+                    return jules_file
+    
+    return None
 
 def ensure_alias_for_jules() -> None:
     """`jj util exec` を別名で呼べるように設定する。
@@ -161,21 +257,34 @@ def ensure_alias_for_jules() -> None:
     Notes:
         `aliases.jules = ["util","exec","--","jules"]` を user スコープに設定。
         これで `jj jules ...` が使えるようになる。
-        Windows環境では、jules のフルパスを使用することを試みる。
+        Windows環境では、jules.cmd のフルパスを使用する必要がある場合がある。
     """
-    # jules コマンドのパスを取得
-    jules_cmd = "jules"
+    # jules コマンドが見つかるか確認（エイリアス設定の前に）
     jules_path = shutil.which("jules")
-    if jules_path:
-        jules_cmd = jules_path
-    elif sys.platform == "win32":
-        # Windows環境では .cmd/.bat 拡張子も試す
-        jules_cmd_alt = shutil.which("jules.cmd") or shutil.which("jules.bat")
-        if jules_cmd_alt:
-            jules_cmd = jules_cmd_alt
+    if jules_path is None and sys.platform == "win32":
+        jules_path = shutil.which("jules.cmd") or shutil.which("jules.bat")
     
-    # jules が見つからない場合でも、デフォルトで "jules" を使用（後でエラーになる）
-    alias_value = f'["util","exec","--","{jules_cmd}"]'
+    if jules_path is None:
+        raise RuntimeError(
+            "jules コマンドが見つかりませんでした。\n"
+            "インストール方法: npm install -g @google/jules\n"
+            "インストール後、新しいターミナルを開いてから再度実行してください。"
+        )
+    
+    # Windows環境では、jj util exec が jules.cmd を見つけられない場合があるため、
+    # フルパスを使用する。TOML配列内の文字列として正しくエスケープする必要がある。
+    if sys.platform == "win32" and jules_path:
+        # Windows環境では、フルパスを使用する
+        # TOML配列の文字列内では、バックスラッシュを \\ にエスケープする必要がある
+        # Python の f-string で使用するため、バックスラッシュを \\\\ にエスケープ
+        # （Python文字列: \\\\ → TOML文字列: \\ → 実際のパス: \）
+        jules_cmd = jules_path.replace("\\", "\\\\")
+        # TOML配列の文字列要素として設定（jj config set が TOML として解釈）
+        alias_value = f'["util","exec","--","{jules_cmd}"]'
+    else:
+        # Unix系環境では、コマンド名のみで十分（PATHから解決される）
+        jules_cmd = "jules"
+        alias_value = f'["util","exec","--","{jules_cmd}"]'
     
     code, out, err = run(
         ["jj", "config", "set", "--user", "aliases.jules", alias_value]
@@ -183,11 +292,8 @@ def ensure_alias_for_jules() -> None:
     if code != 0:
         raise RuntimeError(f"jj の別名設定に失敗しました: {err or out}")
     
-    # 設定した jules コマンドが実際に動作するか確認
-    if jules_path:
-        console.log(f"jules コマンドのパス: {jules_cmd}")
-    else:
-        console.log(f"警告: jules コマンドのパスを取得できませんでした。デフォルトの 'jules' を使用します。")
+    # デバッグ: 設定されたエイリアスを確認
+    console.log(f"jules エイリアスを設定しました: {alias_value}")
 
 def ensure_repo_context() -> None:
     """実行ディレクトリが jj リポジトリかざっくり確認する。"""
@@ -279,16 +385,31 @@ def create_feature_workspaces(feature_dirs: List[Path]) -> List[Tuple[Path, Path
 def invoke_jules_in(dir_and_prompt: Tuple[Path, str]) -> Tuple[Path, int, str, str]:
     """指定ワークスペース（作業コピー）で jules セッションを 1 件作る。"""
     d, prompt = dir_and_prompt
-    code, out, err = run(["jj", "jules", "remote", "new", "--repo", ".", "--session", prompt], cwd=d)
+    # Windows環境では、jj util exec が .cmd ファイルを正しく実行できない可能性があるため、
+    # 直接 jules コマンドを実行する（jj のリポジトリコンテキストは --repo . で指定）
+    jules_cmd = find_jules_path()
+    if jules_cmd is None:
+        jules_cmd = "jules"
+    
+    # 直接 jules コマンドを実行（jj を経由しない）
+    # jules コマンドは --repo オプションで jj リポジトリを認識できる
+    code, out, err = run([jules_cmd, "remote", "new", "--repo", ".", "--session", prompt], cwd=d)
     # jules コマンドが見つからないエラーの場合、より詳細なメッセージを追加
-    if code != 0 and "jules" in err.lower() and ("not found" in err.lower() or "見つかりません" in err.lower()):
-        err = (
-            f"{err}\n"
-            f"※ jules コマンドが PATH から見つかりません。\n"
-            f"  - npm install -g @google/jules でインストール済みか確認してください\n"
-            f"  - 新しいターミナルを開いてから再度実行してください\n"
-            f"  - または、環境変数 PATH に npm のグローバルパッケージパスが含まれているか確認してください"
-        )
+    if code != 0:
+        error_text = (err or out).lower()
+        if "failed to execute" in error_text or "external command" in error_text or "jules" in error_text:
+            jules_path = find_jules_path()
+            path_info = f"jules のパス: {jules_path}" if jules_path else "jules のパス: 見つかりませんでした"
+            err = (
+                f"{err}\n"
+                f"※ jules コマンドの実行に失敗しました。\n"
+                f"  {path_info}\n"
+                f"  対処方法:\n"
+                f"  1. npm install -g @google/jules でインストール済みか確認\n"
+                f"  2. 新しいターミナルを開いてから再度実行\n"
+                f"  3. 環境変数 PATH に npm のグローバルパッケージパスが含まれているか確認\n"
+                f"     通常は %APPDATA%\\npm または %LOCALAPPDATA%\\npm です"
+            )
     return d, code, out, err
 
 def dispatch_all(pairs: Iterable[Tuple[Path, str]]) -> None:
@@ -335,7 +456,20 @@ def build_dynamic_parents_from_feature_dirs(feature_dirs: List[Path]) -> List[st
     parents: List[str] = []
     for fdir in feature_dirs:
         ws_name = make_workspace_name(fdir)
-        parents.append(str(WS_ROOT / ws_name) + "@")
+        ws_path = WS_ROOT / ws_name
+        # jjのrevset構文: Windowsパスではバックスラッシュをスラッシュに変換
+        # 引用符で囲む場合は、バックスラッシュをエスケープする必要があるため、
+        # スラッシュに変換する方が安全
+        ws_path_str = str(ws_path).replace("\\", "/")
+        # 相対パスを使用（ROOT基準）
+        try:
+            ws_path_rel = ws_path.relative_to(ROOT)
+            ws_path_rel_str = str(ws_path_rel).replace("\\", "/")
+            # 相対パスを使用する方が安全（引用符なしでも動作）
+            parents.append(f"{ws_path_rel_str}@")
+        except ValueError:
+            # 相対パスにできない場合は絶対パスを使用（スラッシュ変換済み）
+            parents.append(f'"{ws_path_str}@"')
     return parents
 
 def merge_all_results(feature_dirs: List[Path]) -> None:
