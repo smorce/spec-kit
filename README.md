@@ -1,5 +1,8 @@
 # to do
 
+- 2025/11/03
+  - task までできたので実装する(/speckit.analyze の指摘は受けたけど一旦実装に進む。指摘内容は これは見ないでください。アウトプットの内容.txt に書いた)
+
 - これでウォーターフォール型バイブコーディングが実践できる
   - S&P TOP10 効率的フロンティア
   - メモリーム
@@ -9,8 +12,10 @@
 
 流れ:
 wsl で CodexCLI を起動する。
-```これは毎回最初にやる。/new したときも必要に応じて読み込む。
+```001-memorium-mdブランチ ではこれは毎回最初にやる。/new したときも必要に応じて読み込む。====
 プロジェクト憲章（.specify/memory/constitution.md）を読み込んでください。
+
+データインサートと検索は MiniRAG でやりますが、MiniRAG のサンプルコードは「documents/MiniRAG/minirag_on_postgres のサンプルコード.py」を確認してください。MiniRAGは「dockerfile: Dockerfile.postgres」と「dockerfile: Dockerfile.minirag_on_postgre」の2つのコンテナで動かすため、実行したい場合は私に相談してください。
 ```
 ↓
 /prompts:speckit.specify Memorium.md を確認してください。
@@ -105,11 +110,11 @@ specify check
 - Spec Kit は「Spec → Plan → Tasks → Implement」のゲート制で回すので、1つのプロンプトに詰め込みすぎないこと
 - 仕様段階(specify)は技術選定を持ち込まない（What/Whyに集中） → その後のPlanでHowを決める
 - /plan はコンテキスト（目的）＋技術選定＋原則＋出力ファイルの厳密指定に絞ると、モデルがテンプレに沿った plan.mdを安定生成します
-- /plan はPlan を作るだけ。タスク分解は /speckit.tasks、実装は /speckit.implement に流すのが基本ラインです。
+- /plan は Plan を作るだけ。タスク分解は /speckit.tasks、実装は /speckit.implement に流すのが基本ラインです。
 - 本番レベルのLLMアプリケーションの12個の設計原則 の入れ込み方
   - constitution.md に“要約（原則の骨子）だけ”を入れ、本文はテンプレート化したチェックリストとして品質ゲートで回すのがおすすめ。
   - constitution（憲法）にはプロジェクトを貫く原則の「短い要約」を置きます（例：「エージェントはステートレス・リデューサとして設計する」「ツール呼び出しは構造化JSONのみ」等の見出し＋1行）。Spec Kitはまず /speckit.constitution でこの土台を作り、以後の仕様・計画・実装で参照します
-- チェックリストは2つ用意したので、/speckit.checklist は2回実行する。まとめると精度が落ちそうなので分割した
+- チェックリストは N個 用意したので、/speckit.checklist は N回 実行する。まとめると精度が落ちそうなので分割した
   - チェックリスト1: マイクロサービス実装チェックリスト
   - チェックリスト2: 本番レベルのLLMアプリ12個の設計原則チェックリスト
 
@@ -118,24 +123,36 @@ specify check
 まずは CodexCLI を立ち上げて以下を実行する。
 codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 
-### エージェント内で順に実行
+### エージェント内で順に実行(必要に応じて /new する)
 /speckit.constitution  品質・テスト・UX一貫性・性能に関する原則を作って
 /speckit.specify       何を作るか（WHAT/WHY）を定義。「ビジネスドメインとユースケース」を書く。この段階ではスタックや方式は書かないのが公式推奨
 /speckit.clarify       曖昧さを解消（推奨オプション）
-/speckit.plan          技術計画（スタック/アーキテクチャ）。マイクロサービス方針と生成してほしいドキュメントを明確に書く。specs/<feature>/plan.md / data-model.md / contracts/ ... など複数の技術文書を出すので、ここにArchitecture.md / Design.md / OpenAPI.yaml を追加で作る旨を盛り込む。SpecKitに合わせるなら各サービスを**“機能（feature）”**として扱うと運用が楽。
+/speckit.plan          技術計画（スタック/アーキテクチャ）。マイクロサービス方針と生成してほしいドキュメントを明確に書く。
 /speckit.checklist     設計の妥当性チェック。チェックリスト分 実行。
 /speckit.tasks         実行タスクリスト生成。実装タスクをサービス単位に分割する。
 /speckit.analyze       成果物間の整合性チェック（推奨オプション）
 ※ /speckit.implement     タスク実行・TDDで実装（タスク順にローカルCLIを叩きながら構築）
-/speckit.implement は使わずに WSL ではなくPowerShell で「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行してこれで実装する。このスクリプトは「JJ + Jules」。
+/speckit.implement は使わずに orchestrate_jj_jules_from_specs.py を使う。詳細は下記。
 /speckit.codeReview.md
-
-
 
 ※任意ツール:
 /speckit.clarify（不足要件の質疑応答）
 /speckit.analyze（成果物間の整合性チェック）
 /speckit.checklist（要件の網羅・明確性の検査。品質チェックリスト生成）
+
+
+## orchestrate_jj_jules_from_specs.py
+
+- WSL ではなく PowerShell で「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行して実装する
+- このスクリプトは「JJ + Jules」。
+- このスクリプトを動かす前に git push して、事前にリポジトリを丸ごと別フォルダへバックアップを取っておく(jj を使うと Git が壊れることがあるらしい)
+- 次に以下を実行する。001-memorium-md はブランチ名。
+  - jj git init --colocate
+  - jj status
+  - git status
+  - jj bookmark track 001-memorium-md@origin
+  - jj bookmark set 001-memorium-md
+  - jj git push
 
 
 # AIコーディングの心得
@@ -146,6 +163,14 @@ https://qiita.com/chomado/items/764e67e104843a22bcde
 - 常に検証・テスト・レビューを実施​
   - /speckit.checklist
   - /speckit.analyze
+
+# done
+
+- 2025/11/03
+  - ローカルで MiniRAG_on_postgres をテストした。とりあえずそれっぽく動いているので、一旦OK。
+  - これが動かないと Spec kit でどうやって指示すれば良いか分からないので、動かせるかどうか確認して、サンプルコードにまとめて Spec kit が理解できるようにドキュメント化する
+    - "documents/MiniRAG/minirag_on_postgres のサンプルコード.py" がサンプルコード。これでデータインサートと検索(メタデータフィルター付き)をすれば良い。
+
 
 
 ---
