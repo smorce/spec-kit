@@ -1,6 +1,18 @@
-# Multi-Field Search 機能ガイド
+### 使い方（例）
+```python
+from minirag.base import QueryParam
 
-2025/10/04
+param = QueryParam(mode="mini", include_provenance=True)
+result, _ = rag.query("質問文", param=param)
+# result == {"answer": "...", "provenance": {"entities": [...], "chunks": [...]}}
+
+# コンテキストのみ欲しい場合
+param = QueryParam(mode="mini", include_provenance=True, only_need_context=True)
+ctx, _ = rag.query("質問文", param=param)
+# ctx == {"context": "...", "provenance": {...}}
+```
+
+# Multi-Field Search 機能ガイド
 
 ## 概要
 
@@ -97,26 +109,6 @@ rag = MiniRAG(
 psql -h your-db-host -U your-user -d your-database -f 002_add_text_field_to_existing_chunks.sql
 ```
 
-または、Dockerコンテナ内から：
-
-```bash
-psql -U postgres -d minirag -f /path/to/002_add_text_field_to_existing_chunks.sql
-```
-
-## 技術的な詳細
-
-### データフロー
-
-1. **チャンク生成時**（`apipeline_process_enqueue_documents`）
-   - 構造化データの場合、各フィールドごとに個別のチャンクを生成
-   - 各チャンクのメタデータに `text_field` を付与
-   - 統合版チャンク（`_all`）も生成
-
-2. **検索時**（`aquery`）
-   - `target_fields` が指定されている場合、内部で `metadata_filter` に変換
-   - PostgreSQLのメタデータフィルタでフィールドを絞り込み
-   - IN句を使った複数フィールド検索をサポート
-
 ### PostgreSQLクエリ例
 
 ```sql
@@ -138,39 +130,3 @@ WHERE metadata->>'text_field' = '_all';
 - `target_fields` を指定しない場合、デフォルトで `_all`（統合版）が検索されます
 - 既存のコードは変更なしで動作します
 - マイグレーションスクリプトにより、既存データにも `text_field="_all"` が追加されます
-
-## パフォーマンス考慮事項
-
-### ストレージ増加
-
-各フィールドごとにチャンクを生成するため、ストレージ使用量が増加します。
-- `title` + `description` の場合：約 2〜3倍
-- `generate_combined_chunk=False` にすることで統合版を無効化可能
-
-### インデックス
-
-`metadata->>'text_field'` にインデックスが自動作成され、検索パフォーマンスが最適化されます。
-
-## トラブルシューティング
-
-### Q: 既存データで `target_fields` を指定しても結果が返ってこない
-
-A: マイグレーションスクリプト（`002_add_text_field_to_existing_chunks.sql`）を実行してください。
-
-### Q: ストレージ使用量が増加しすぎる
-
-A: 以下の設定で調整可能です：
-```python
-rag = MiniRAG(
-    generate_combined_chunk=False,  # 統合版を無効化
-    enable_field_splitting=False,   # フィールド分割を完全に無効化
-)
-```
-
-## 更新履歴
-
-- 2025-10-03: Multi-Field Search 機能追加
-  - フィールド別チャンク生成
-  - `target_fields` パラメータ追加
-  - PostgreSQL IN句サポート
-  - マイグレーションスクリプト提供
