@@ -127,7 +127,7 @@ codex -m gpt-5-codex --yolo -c model_reasoning_effort="medium" --search "$@"
 /speckit.tasks         実行タスクリスト生成。実装タスクをサービス単位に分割する。
 /speckit.analyze       成果物間の整合性チェック（推奨オプション）
 ※ /speckit.implement     タスク実行・TDDで実装（タスク順にローカルCLIを叩きながら構築）
-/speckit.implement は使わずに「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行してこれで実装する。このスクリプトは「JJ + Jules」。
+/speckit.implement は使わずに WSL ではなくPowerShell で「uv run --link-mode=copy orchestrate_jj_jules_from_specs.py」を実行してこれで実装する。このスクリプトは「JJ + Jules」。
 /speckit.codeReview.md
 
 
